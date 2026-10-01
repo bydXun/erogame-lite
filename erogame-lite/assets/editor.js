@@ -150,7 +150,7 @@
 
     let device;
     try {
-      const response = await fetch("https://github.com/login/device/code", {
+      const response = await fetch("/api/github/device/code", {
         method: "POST",
         headers: {
           "Accept": "application/json",
@@ -175,7 +175,7 @@
     clearInterval(deviceFlowTimer);
     deviceFlowTimer = setInterval(async () => {
       try {
-        const response = await fetch("https://github.com/login/oauth/access_token", {
+        const response = await fetch("/api/github/device/token", {
           method: "POST",
           headers: {
             "Accept": "application/json",

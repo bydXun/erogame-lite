@@ -428,6 +428,37 @@
   text-align: center;
 }
 
+.admin-auth-form {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-auth-form .form-field {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-auth-form .form-field span {
+  color: #4e4a45;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-auth-form .form-field input {
+  width: 100%;
+  height: 40px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  outline: 0;
+  background: #fff;
+}
+
+.admin-auth-form .button {
+  width: 100%;
+  margin-top: 4px;
+}
+
 @media (max-width: 1050px) {
   .editor-page {
     grid-template-columns: 240px minmax(0, 1fr);

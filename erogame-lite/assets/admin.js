@@ -6,6 +6,7 @@
   let activeIndex = -1;
   let dirty = false;
   let imageTarget = "content";
+  let authMode = "login";
 
   const listRoot = $("[data-post-list]");
   const richContent = $("[data-rich-content]");
@@ -14,6 +15,8 @@
   const dirtyStatus = $("[data-dirty-status]");
   const coverPreview = $("[data-cover-preview]");
   const imageInput = $("[data-image-input]");
+  const authModal = $("#admin-auth");
+  const authForm = $("[data-auth-form]");
 
   function escapeHtml(value) {
     return String(value ?? "")
@@ -76,6 +79,46 @@
     const result = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(result.error || `请求失败：${response.status}`);
     return result;
+  }
+
+  function openAuth(mode, message = "") {
+    authMode = mode;
+    authModal.classList.add("open");
+    $("[data-auth-title]").textContent = mode === "setup" ? "初始化管理员" : "管理员登录";
+    $("[data-auth-copy]").textContent = mode === "setup"
+      ? "第一次使用需要设置唯一的站点管理员账号。"
+      : "使用站点管理员账号登录。";
+    $("[data-setup-token-field]").hidden = mode !== "setup";
+    $("[data-auth-submit]").textContent = mode === "setup" ? "创建管理员" : "登录";
+    $("[data-auth-error]").textContent = message;
+  }
+
+  function closeAuth() {
+    authModal.classList.remove("open");
+    authForm.reset();
+    $("[data-auth-error]").textContent = "";
+  }
+
+  async function checkAuthentication() {
+    const statusResponse = await fetch("/api/admin/status", {
+      headers: { "Accept": "application/json" }
+    });
+    const status = await statusResponse.json().catch(() => ({}));
+    if (!status.configured) {
+      openAuth("setup");
+      return false;
+    }
+
+    const meResponse = await fetch("/api/admin/me", {
+      headers: { "Accept": "application/json" }
+    });
+    if (!meResponse.ok) {
+      openAuth("login");
+      return false;
+    }
+
+    closeAuth();
+    return true;
   }
 
   async function loadPosts() {
@@ -379,6 +422,10 @@
     $("[data-move-down]").addEventListener("click", () => movePost(1));
     $("[data-generate-slug]").addEventListener("click", generateSlug);
     $("[data-post-search]").addEventListener("input", renderList);
+    $("[data-logout]").addEventListener("click", async () => {
+      await fetch("/api/admin/logout", { method: "POST" });
+      window.location.reload();
+    });
 
     $$("[data-upload-cover]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -413,10 +460,44 @@
     });
   }
 
+  function bindAuth() {
+    authForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      $("[data-auth-error]").textContent = "";
+      const formData = new FormData(authForm);
+      const endpoint = authMode === "setup" ? "/api/admin/setup" : "/api/admin/login";
+      const body = {
+        username: formData.get("username"),
+        password: formData.get("password"),
+        ...(authMode === "setup" ? { setupToken: formData.get("setupToken") } : {})
+      };
+
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify(body)
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "登录失败");
+        closeAuth();
+        await loadPosts();
+      } catch (error) {
+        $("[data-auth-error]").textContent = error.message;
+      }
+    });
+  }
+
   async function init() {
     bindActions();
+    bindAuth();
     bindEditor();
     try {
+      const authenticated = await checkAuthentication();
+      if (!authenticated) {
+        cloudStatus.textContent = "等待管理员登录…";
+        return;
+      }
       await loadPosts();
     } catch (error) {
       cloudStatus.textContent = error.message;

@@ -14,6 +14,7 @@
   let fileHandle = null;
   let githubToken = localStorage.getItem(GITHUB_TOKEN_KEY) || "";
   let deviceFlowTimer = null;
+  let currentDeviceCode = "";
   let dirty = false;
   let searchValue = "";
   let autoSaveTimer;
@@ -131,8 +132,63 @@
 
   function closeGithubModal() {
     clearInterval(deviceFlowTimer);
+    currentDeviceCode = "";
     $("#github-modal").classList.remove("open");
     document.body.classList.remove("modal-open");
+  }
+
+  async function completeGithubConnection(accessToken) {
+    clearInterval(deviceFlowTimer);
+    githubToken = accessToken;
+    localStorage.setItem(GITHUB_TOKEN_KEY, githubToken);
+    setGithubStatus("GitHub 已连接", true);
+    closeGithubModal();
+    showToast("GitHub 连接成功");
+
+    if (!dirty) {
+      try {
+        const remote = await loadGithubPosts();
+        posts = remote.posts;
+        activeIndex = 0;
+        syncForm();
+        showToast("已载入 GitHub 最新文章");
+      } catch {
+        showToast("已连接，但从 GitHub 读取文章失败");
+      }
+    }
+  }
+
+  async function checkDeviceAuthorization(deviceCode, manual = false) {
+    try {
+      const response = await fetch("/api/github/device/token", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          client_id: GITHUB_CLIENT_ID,
+          device_code: deviceCode,
+          grant_type: "urn:ietf:params:oauth:grant-type:device_code"
+        })
+      });
+      const result = await response.json();
+
+      if (result.access_token) {
+        await completeGithubConnection(result.access_token);
+        return;
+      }
+
+      if (result.error === "authorization_pending" || result.error === "slow_down") {
+        if (manual) $("[data-device-status]").textContent = "GitHub 还没有确认，请稍等几秒再试。";
+        return;
+      }
+
+      clearInterval(deviceFlowTimer);
+      $("[data-device-status]").textContent = `授权失败：${result.error_description || result.error}`;
+    } catch {
+      if (manual) $("[data-device-status]").textContent = "检查授权失败，请确认网络后重试。";
+    }
   }
 
   async function connectGithub() {
@@ -171,53 +227,13 @@
     $("[data-device-code]").textContent = device.user_code;
     $("[data-device-status]").textContent = "等待 GitHub 确认授权…";
     $("[data-open-github-device]").href = device.verification_uri;
+    currentDeviceCode = device.device_code;
 
     clearInterval(deviceFlowTimer);
-    deviceFlowTimer = setInterval(async () => {
-      try {
-        const response = await fetch("/api/github/device/token", {
-          method: "POST",
-          headers: {
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            client_id: GITHUB_CLIENT_ID,
-            device_code: device.device_code,
-            grant_type: "urn:ietf:params:oauth:grant-type:device_code"
-          })
-        });
-        const result = await response.json();
-
-        if (result.access_token) {
-          clearInterval(deviceFlowTimer);
-          githubToken = result.access_token;
-          localStorage.setItem(GITHUB_TOKEN_KEY, githubToken);
-          setGithubStatus("GitHub 已连接", true);
-          closeGithubModal();
-          showToast("GitHub 连接成功");
-
-          if (!dirty) {
-            try {
-              const remote = await loadGithubPosts();
-              posts = remote.posts;
-              activeIndex = 0;
-              syncForm();
-              showToast("已载入 GitHub 最新文章");
-            } catch {
-              showToast("已连接，但从 GitHub 读取文章失败");
-            }
-          }
-          return;
-        }
-
-        if (result.error === "authorization_pending" || result.error === "slow_down") return;
-        clearInterval(deviceFlowTimer);
-        $("[data-device-status]").textContent = `授权失败：${result.error_description || result.error}`;
-      } catch {
-        $("[data-device-status]").textContent = "等待授权时网络连接失败，请关闭后重试。";
-      }
-    }, Math.max(5, Number(device.interval) || 5) * 1000);
+    deviceFlowTimer = setInterval(
+      () => checkDeviceAuthorization(currentDeviceCode),
+      Math.max(5, Number(device.interval) || 5) * 1000
+    );
   }
 
   async function publishGithub() {
@@ -708,6 +724,15 @@
       } catch {
         showToast("复制失败，请手动输入授权码");
       }
+    });
+
+    $("[data-check-device]").addEventListener("click", async () => {
+      if (!currentDeviceCode) {
+        showToast("请先点击“连接 GitHub”获取授权码");
+        return;
+      }
+      $("[data-device-status]").textContent = "正在检查授权结果…";
+      await checkDeviceAuthorization(currentDeviceCode, true);
     });
 
     listRoot.addEventListener("click", (event) => {

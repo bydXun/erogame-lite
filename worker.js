@@ -22,6 +22,12 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    if (url.pathname === "/editor" || url.pathname === "/editor/") {
+      const redirectUrl = new URL("/editor.html", url);
+      redirectUrl.search = url.search;
+      return Response.redirect(redirectUrl, 302);
+    }
+
     if (url.pathname === "/api/github/device/code" && request.method === "POST") {
       return proxyGithub(request, "https://github.com/login/device/code");
     }

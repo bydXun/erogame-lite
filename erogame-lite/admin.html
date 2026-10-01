@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="EroGame Lite 管理后台">
+  <title>管理后台 · EroGame Lite</title>
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="stylesheet" href="assets/editor.css">
+  <link rel="stylesheet" href="assets/fonts.css">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
+  <script src="assets/posts.js"></script>
+  <script src="assets/admin.js" defer></script>
+</head>
+<body>
+  <header class="editor-header">
+    <div class="editor-header-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>EroGame Lite 管理后台</span>
+      </a>
+      <div class="editor-header-actions">
+        <a class="button secondary" href="index.html">查看网站</a>
+        <button class="button secondary" type="button" data-new-post>新建文章</button>
+        <button class="button secondary" type="button" data-save-draft>保存草稿</button>
+        <button class="button" type="button" data-publish-post>发布文章</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="editor-page">
+    <aside class="editor-sidebar">
+      <div class="sidebar-head">
+        <strong>云端文章</strong>
+        <div class="sidebar-actions">
+          <button class="button" type="button" data-new-post>新建</button>
+          <button class="button secondary" type="button" data-delete-post>删除</button>
+        </div>
+        <input class="editor-search" type="search" data-post-search placeholder="搜索标题、分类或标签">
+      </div>
+      <div class="post-list" data-post-list></div>
+    </aside>
+
+    <section class="editor-main">
+      <div class="editor-panel">
+        <div class="editor-panel-head">
+          <div>
+            <h1 class="editor-panel-title">编辑文章</h1>
+            <div class="editor-status">
+              <span data-cloud-status>正在读取云端文章…</span>
+              <span class="dirty" data-dirty-status hidden>有未保存修改</span>
+            </div>
+          </div>
+          <div class="form-row-inline">
+            <button class="button secondary" type="button" data-move-up>上移</button>
+            <button class="button secondary" type="button" data-move-down>下移</button>
+            <button class="button secondary" type="button" data-save-draft>保存草稿</button>
+            <button class="button" type="button" data-publish-post>发布</button>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field full">
+            <label for="admin-title">标题</label>
+            <textarea id="admin-title" data-field="title" placeholder="文章标题"></textarea>
+          </div>
+
+          <div class="form-field">
+            <label for="admin-slug">文章路径</label>
+            <div class="form-row-inline">
+              <input id="admin-slug" data-field="slug" placeholder="post-20261001">
+              <button class="button secondary" type="button" data-generate-slug>自动生成</button>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="admin-date">发布日期</label>
+            <input id="admin-date" type="date" data-field="date">
+          </div>
+
+          <div class="form-field">
+            <label for="admin-type">文章类型</label>
+            <select id="admin-type" data-field="type">
+              <option value="game">游戏感想</option>
+              <option value="tutorial">教程</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="admin-category">显示分类</label>
+            <input id="admin-category" data-field="category">
+          </div>
+
+          <div class="form-field full">
+            <label for="admin-summary">文章摘要</label>
+            <textarea id="admin-summary" data-field="summary"></textarea>
+          </div>
+
+          <div class="form-field full">
+            <label for="admin-tags">标签</label>
+            <input id="admin-tags" data-field="tags" placeholder="用英文逗号分隔">
+          </div>
+
+          <div class="form-field full">
+            <label for="admin-cover">封面图片</label>
+            <div class="form-row-inline">
+              <input id="admin-cover" data-field="cover" placeholder="/media/... 或图片地址">
+              <button class="button secondary" type="button" data-upload-cover>上传封面</button>
+            </div>
+          </div>
+
+          <div class="form-field full">
+            <div class="cover-preview" data-cover-preview></div>
+          </div>
+
+          <div class="form-field full">
+            <label class="checkbox-line">
+              <input type="checkbox" data-field="featured">
+              首页推荐
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="editor-panel">
+        <div class="editor-panel-head">
+          <h2 class="editor-panel-title">正文</h2>
+          <button class="button secondary" type="button" data-upload-content-image>插入图片</button>
+        </div>
+
+        <div class="rich-editor">
+          <div class="editor-toolbar" role="toolbar" aria-label="正文格式">
+            <button class="toolbar-button" type="button" data-command="formatBlock" data-value="h2">大标题</button>
+            <button class="toolbar-button" type="button" data-command="formatBlock" data-value="h3">小标题</button>
+            <button class="toolbar-button" type="button" data-command="formatBlock" data-value="p">正文</button>
+            <button class="toolbar-button" type="button" data-command="bold"><i data-lucide="bold"></i>粗体</button>
+            <button class="toolbar-button" type="button" data-command="italic"><i data-lucide="italic"></i>斜体</button>
+            <button class="toolbar-button" type="button" data-command="insertUnorderedList"><i data-lucide="list"></i>列表</button>
+            <button class="toolbar-button" type="button" data-command="insertOrderedList"><i data-lucide="list-ordered"></i>编号</button>
+            <button class="toolbar-button" type="button" data-command="formatBlock" data-value="blockquote"><i data-lucide="quote"></i>引用</button>
+            <button class="toolbar-button" type="button" data-insert-link><i data-lucide="link"></i>链接</button>
+            <button class="toolbar-button" type="button" data-upload-content-image><i data-lucide="image"></i>图片</button>
+            <button class="toolbar-button" type="button" data-insert-code><i data-lucide="code-2"></i>代码</button>
+            <button class="toolbar-button" type="button" data-insert-callout><i data-lucide="message-square-warning"></i>提示框</button>
+            <button class="toolbar-button" type="button" data-insert-keypoints"><i data-lucide="badge-check"></i>重点框</button>
+            <button class="toolbar-button" type="button" data-command="removeFormat">清除格式</button>
+          </div>
+          <div
+            class="rich-content"
+            contenteditable="true"
+            spellcheck="true"
+            data-rich-content
+            data-placeholder="开始写正文…"
+          ></div>
+        </div>
+      </div>
+
+      <div class="preview-panel">
+        <div class="preview-head">
+          <h2 class="preview-title">实时预览</h2>
+          <span class="editor-status" data-preview-status>草稿预览</span>
+        </div>
+        <div class="preview-body" data-preview-body></div>
+      </div>
+    </section>
+  </main>
+
+  <input type="file" accept="image/*" hidden data-image-input>
+  <div class="toast" data-admin-toast></div>
+</body>
+</html>

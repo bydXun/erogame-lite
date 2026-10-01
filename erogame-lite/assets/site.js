@@ -515,13 +515,20 @@
     performSearch(initialQuery);
   }
 
-  function renderArticle() {
+  async function renderArticle() {
     const root = $("[data-article-root]");
     if (!root) return;
 
     const params = new URLSearchParams(window.location.search);
     const slug = params.get("slug");
-    const post = posts.find((item) => item.slug === slug);
+    let post = posts.find((item) => item.slug === slug);
+
+    if (post && !post.content) {
+      try {
+        const response = await fetch(`/api/posts/${encodeURIComponent(post.slug)}`);
+        if (response.ok) post = (await response.json()).post;
+      } catch {}
+    }
 
     if (!post) {
       root.innerHTML = `
@@ -653,14 +660,28 @@
     });
   }
 
-  function init() {
+  async function loadPostsFromApi() {
+    try {
+      const response = await fetch("/api/posts", {
+        headers: { "Accept": "application/json" }
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      if (Array.isArray(data.posts) && data.posts.length) {
+        posts = data.posts;
+      }
+    } catch {}
+  }
+
+  async function init() {
+    await loadPostsFromApi();
     initNavigation();
     initScrollBehavior();
     renderHome();
     renderArchive();
     renderTags();
     renderSearch();
-    renderArticle();
+    await renderArticle();
     initStaticAnchors();
     window.lucide?.createIcons();
   }

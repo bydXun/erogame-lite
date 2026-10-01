@@ -2,6 +2,13 @@
   "name": "white-brook-d0ae",
   "main": "worker.js",
   "compatibility_date": "2026-10-01",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "erogame-lite-db",
+      "database_id": "282aaa46-4f43-49b2-809e-84ec0c04c91a"
+    }
+  ],
   "assets": {
     "directory": "./erogame-lite",
     "binding": "ASSETS",

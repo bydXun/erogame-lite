@@ -40,6 +40,14 @@ async function ensureDatabase(env) {
       published_at TEXT
     )
   `).run();
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS media (
+      key TEXT PRIMARY KEY,
+      mime_type TEXT NOT NULL,
+      data BLOB NOT NULL,
+      created_at TEXT NOT NULL
+    )
+  `).run();
 }
 
 function mapPost(row, includeContent = true) {
@@ -234,29 +242,44 @@ async function handleApi(request, env, url) {
     }
 
     if (url.pathname === "/api/admin/media" && request.method === "POST") {
-      if (!env.MEDIA) return json({ error: "R2 图片存储尚未绑定" }, 503);
       const form = await request.formData();
       const file = form.get("file");
       if (!(file instanceof File)) return json({ error: "没有收到图片文件" }, 400);
+      if (file.size > 2 * 1024 * 1024) {
+        return json({ error: "图片压缩后仍超过 2MB，请换一张图片" }, 413);
+      }
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
       const key = `uploads/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
-      await env.MEDIA.put(key, file.stream(), {
-        httpMetadata: { contentType: file.type || "application/octet-stream" }
-      });
+      await ensureDatabase(env);
+      await env.DB.prepare(
+        "INSERT INTO media (key, mime_type, data, created_at) VALUES (?, ?, ?, ?)"
+      ).bind(
+        key,
+        file.type || "application/octet-stream",
+        await file.arrayBuffer(),
+        new Date().toISOString()
+      ).run();
       return json({ url: `/media/${key}`, key }, 201);
     }
   }
 
   if (url.pathname.startsWith("/media/") && request.method === "GET") {
-    if (!env.MEDIA) return new Response("Not found", { status: 404 });
     const key = decodeURIComponent(url.pathname.slice("/media/".length));
-    const object = await env.MEDIA.get(key);
-    if (!object) return new Response("Not found", { status: 404 });
-    const headers = new Headers();
-    object.writeHttpMetadata(headers);
-    headers.set("etag", object.httpEtag);
-    headers.set("Cache-Control", "public, max-age=31536000, immutable");
-    return new Response(object.body, { headers });
+    try {
+      await ensureDatabase(env);
+      const object = await env.DB.prepare(
+        "SELECT mime_type, data FROM media WHERE key = ? LIMIT 1"
+      ).bind(key).first();
+      if (!object) return new Response("Not found", { status: 404 });
+      return new Response(object.data, {
+        headers: {
+          "Content-Type": object.mime_type,
+          "Cache-Control": "public, max-age=31536000, immutable"
+        }
+      });
+    } catch {
+      return new Response("Not found", { status: 404 });
+    }
   }
 
   return null;

@@ -673,8 +673,31 @@
     } catch {}
   }
 
+  async function initAdminEntry() {
+    try {
+      const response = await fetch("/api/admin/me", {
+        headers: { "Accept": "application/json" }
+      });
+      if (!response.ok) return;
+      const result = await response.json();
+      const actions = $(".header-actions");
+      if (!actions || $(".admin-entry", actions)) return;
+
+      const link = document.createElement("a");
+      link.className = "button secondary admin-entry";
+      link.href = "admin.html";
+      link.title = `管理员：${result.admin?.username || ""}`;
+      link.innerHTML = '<i data-lucide="square-pen"></i>管理文章';
+
+      const subscribe = $("[data-open-subscribe]", actions);
+      actions.insertBefore(link, subscribe || null);
+      window.lucide?.createIcons();
+    } catch {}
+  }
+
   async function init() {
     await loadPostsFromApi();
+    await initAdminEntry();
     initNavigation();
     initScrollBehavior();
     renderHome();

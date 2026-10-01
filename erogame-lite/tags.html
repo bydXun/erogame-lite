@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="EroGame Lite 标签浏览">
+  <title>标签 · EroGame Lite</title>
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="stylesheet" href="assets/fonts.css">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
+  <script src="assets/posts.js"></script>
+  <script src="assets/site.js" defer></script>
+</head>
+<body data-page="tags" data-base=".">
+  <header class="top-shell">
+    <div class="header-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>EroGame Lite</span>
+      </a>
+
+      <nav class="main-nav" aria-label="主菜单">
+        <div class="nav-item"><a class="nav-link" href="index.html">首页</a></div>
+        <div class="nav-item">
+          <button class="nav-menu-button" type="button" data-submenu-toggle>
+            游戏感想
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div class="submenu">
+            <a href="archive.html?type=game">全部游戏感想 <small>18 篇</small></a>
+            <a href="tags.html?tag=动作冒险">动作冒险 <small>6 篇</small></a>
+            <a href="tags.html?tag=视觉小说">视觉小说 <small>4 篇</small></a>
+            <a href="tags.html?tag=游玩记录">游玩记录 <small>8 篇</small></a>
+          </div>
+        </div>
+        <div class="nav-item">
+          <button class="nav-menu-button" type="button" data-submenu-toggle>
+            教程
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div class="submenu">
+            <a href="archive.html?type=tutorial">全部教程 <small>14 篇</small></a>
+            <a href="tags.html?tag=AI 工具">AI 工具 <small>5 篇</small></a>
+            <a href="tags.html?tag=部署">部署 <small>4 篇</small></a>
+            <a href="tags.html?tag=写作">写作 <small>3 篇</small></a>
+          </div>
+        </div>
+        <div class="nav-item"><a class="nav-link" href="archive.html">归档</a></div>
+        <div class="nav-item"><a class="nav-link active" href="tags.html">标签</a></div>
+        <div class="nav-item"><a class="nav-link" href="about.html">关于</a></div>
+      </nav>
+
+      <div class="header-actions">
+        <button class="icon-button" type="button" data-open-search aria-label="搜索">
+          <i data-lucide="search"></i>
+        </button>
+        <button class="button header-subscribe" type="button" data-open-subscribe>订阅更新</button>
+        <button class="icon-button mobile-menu-button" type="button" data-open-menu aria-label="打开菜单">
+          <i data-lucide="menu"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <header class="page-header">
+      <p class="eyebrow">Tags</p>
+      <h1 class="page-title">按<span class="title-accent">标签</span>阅读</h1>
+      <p class="page-description">从游戏类型、工具、部署或写作方法进入，找到同一主题下的全部内容。</p>
+    </header>
+
+    <div class="tag-cloud" data-tag-cloud></div>
+
+    <div class="section-head">
+      <h2 data-tag-title>全部文章</h2>
+      <span data-tag-count></span>
+    </div>
+    <div class="post-grid" data-tag-results></div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span>© 2026 EroGame Lite，记录游戏，也整理教程。</span>
+      <a href="index.html">返回首页</a>
+      <a href="archive.html">文章归档</a>
+      <a href="about.html">关于作者</a>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="关于 EroGame Lite">
+  <title>关于 · EroGame Lite</title>
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="stylesheet" href="assets/fonts.css">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
+  <script src="assets/posts.js"></script>
+  <script src="assets/site.js" defer></script>
+</head>
+<body data-page="about" data-base=".">
+  <header class="top-shell">
+    <div class="header-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>EroGame Lite</span>
+      </a>
+
+      <nav class="main-nav" aria-label="主菜单">
+        <div class="nav-item"><a class="nav-link" href="index.html">首页</a></div>
+        <div class="nav-item">
+          <button class="nav-menu-button" type="button" data-submenu-toggle>
+            游戏感想
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div class="submenu">
+            <a href="archive.html?type=game">全部游戏感想 <small>18 篇</small></a>
+            <a href="tags.html?tag=动作冒险">动作冒险 <small>6 篇</small></a>
+            <a href="tags.html?tag=视觉小说">视觉小说 <small>4 篇</small></a>
+            <a href="tags.html?tag=游玩记录">游玩记录 <small>8 篇</small></a>
+          </div>
+        </div>
+        <div class="nav-item">
+          <button class="nav-menu-button" type="button" data-submenu-toggle>
+            教程
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div class="submenu">
+            <a href="archive.html?type=tutorial">全部教程 <small>14 篇</small></a>
+            <a href="tags.html?tag=AI 工具">AI 工具 <small>5 篇</small></a>
+            <a href="tags.html?tag=部署">部署 <small>4 篇</small></a>
+            <a href="tags.html?tag=写作">写作 <small>3 篇</small></a>
+          </div>
+        </div>
+        <div class="nav-item"><a class="nav-link" href="archive.html">归档</a></div>
+        <div class="nav-item"><a class="nav-link" href="tags.html">标签</a></div>
+        <div class="nav-item"><a class="nav-link active" href="about.html">关于</a></div>
+      </nav>
+
+      <div class="header-actions">
+        <button class="icon-button" type="button" data-open-search aria-label="搜索">
+          <i data-lucide="search"></i>
+        </button>
+        <button class="button header-subscribe" type="button" data-open-subscribe>订阅更新</button>
+        <button class="icon-button mobile-menu-button" type="button" data-open-menu aria-label="打开菜单">
+          <i data-lucide="menu"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <header class="page-header">
+      <p class="eyebrow">About</p>
+      <h1 class="page-title">关于 <span class="title-accent">EroGame Lite</span></h1>
+      <p class="page-description">这里记录游戏体验和可复用的教程，不追热点，也不把主观感受包装成绝对结论。</p>
+    </header>
+
+    <div class="about-grid">
+      <div class="about-copy">
+        <h2>为什么写这个博客</h2>
+        <p>游戏玩过以后，很多感受很快会模糊；教程做完以后，如果不整理，也会反复踩同样的坑。这个博客用来留下体验、判断和可以重复使用的过程。</p>
+
+        <h2>写什么</h2>
+        <p>主要内容分两类：一是游戏感想，包括探索、战斗、节奏和设计上的观察；二是教程，包括工具链、部署、写作流程和具体问题的解决方法。</p>
+
+        <h2>内容原则</h2>
+        <ul>
+          <li>不把评分当作唯一结论。</li>
+          <li>游戏文章明确提示剧透程度。</li>
+          <li>教程尽量写出失败情况和排查过程。</li>
+          <li>保留原始判断，也不回避后来发生的变化。</li>
+        </ul>
+      </div>
+
+      <aside class="about-side">
+        <h2>站点入口</h2>
+        <div class="about-links">
+          <a href="archive.html">文章归档 <i data-lucide="arrow-up-right"></i></a>
+          <a href="tags.html">全部标签 <i data-lucide="arrow-up-right"></i></a>
+          <a href="search.html">搜索文章 <i data-lucide="arrow-up-right"></i></a>
+          <a href="#" data-open-subscribe>订阅更新 <i data-lucide="mail"></i></a>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span>© 2026 EroGame Lite，记录游戏，也整理教程。</span>
+      <a href="index.html">返回首页</a>
+      <a href="archive.html">文章归档</a>
+      <a href="tags.html">标签</a>
+    </div>
+  </footer>
+</body>
+</html>

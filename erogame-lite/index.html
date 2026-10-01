@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="EroGame Lite：记录游戏体验，也整理真正用得上的教程。">
+  <title>EroGame Lite · 游戏感想与教程</title>
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="stylesheet" href="assets/fonts.css">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
+  <script src="assets/posts.js"></script>
+  <script src="assets/site.js" defer></script>
+</head>
+<body data-page="home" data-base=".">
+  <header class="top-shell">
+    <div class="header-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>EroGame Lite</span>
+      </a>
+
+      <nav class="main-nav" aria-label="主菜单">
+        <div class="nav-item">
+          <a class="nav-link active" href="index.html">首页</a>
+        </div>
+        <div class="nav-item">
+          <button class="nav-menu-button" type="button" data-submenu-toggle>
+            游戏感想
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div class="submenu">
+            <a href="archive.html?type=game">全部游戏感想 <small>18 篇</small></a>
+            <a href="tags.html?tag=动作冒险">动作冒险 <small>6 篇</small></a>
+            <a href="tags.html?tag=视觉小说">视觉小说 <small>4 篇</small></a>
+            <a href="tags.html?tag=游玩记录">游玩记录 <small>8 篇</small></a>
+          </div>
+        </div>
+        <div class="nav-item">
+          <button class="nav-menu-button" type="button" data-submenu-toggle>
+            教程
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div class="submenu">
+            <a href="archive.html?type=tutorial">全部教程 <small>14 篇</small></a>
+            <a href="tags.html?tag=AI 工具">AI 工具 <small>5 篇</small></a>
+            <a href="tags.html?tag=部署">部署 <small>4 篇</small></a>
+            <a href="tags.html?tag=写作">写作 <small>3 篇</small></a>
+          </div>
+        </div>
+        <div class="nav-item">
+          <a class="nav-link" href="archive.html">归档</a>
+        </div>
+        <div class="nav-item">
+          <a class="nav-link" href="tags.html">标签</a>
+        </div>
+        <div class="nav-item">
+          <a class="nav-link" href="about.html">关于</a>
+        </div>
+      </nav>
+
+      <div class="header-actions">
+        <button class="icon-button" type="button" data-open-search aria-label="搜索">
+          <i data-lucide="search"></i>
+        </button>
+        <button class="button header-subscribe" type="button" data-open-subscribe>订阅更新</button>
+        <button class="icon-button mobile-menu-button" type="button" data-open-menu aria-label="打开菜单">
+          <i data-lucide="menu"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <p class="eyebrow">Game notes & tutorials</p>
+      <h1 class="page-title center">记录游戏，<br>也整理<span class="title-accent">教程</span>。</h1>
+      <p class="page-description center">一个安静的个人博客。写玩过之后的真实感受，也把实践里真正有用的步骤留下来。</p>
+      <div class="hero-actions">
+        <a class="button" href="archive.html">浏览全部文章</a>
+        <a class="button secondary" href="about.html">了解这个博客</a>
+      </div>
+    </section>
+
+    <section aria-labelledby="featured-title">
+      <div class="section-head">
+        <h2 id="featured-title">本期推荐</h2>
+        <a href="archive.html">查看归档</a>
+      </div>
+      <div class="post-grid" data-home-featured></div>
+    </section>
+
+    <section aria-labelledby="latest-title">
+      <div class="section-head">
+        <h2 id="latest-title">最新文章</h2>
+        <a href="archive.html">全部文章</a>
+      </div>
+      <div class="post-grid" data-home-latest></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span>© 2026 EroGame Lite，记录游戏，也整理教程。</span>
+      <a href="archive.html">文章归档</a>
+      <a href="tags.html">标签</a>
+      <a href="about.html">关于作者</a>
+    </div>
+  </footer>
+</body>
+</html>

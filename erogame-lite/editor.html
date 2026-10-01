@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="EroGame Lite 本地文章编辑器">
+  <title>文章编辑器 · EroGame Lite</title>
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="stylesheet" href="assets/editor.css">
+  <link rel="stylesheet" href="assets/fonts.css">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
+  <script src="assets/posts.js"></script>
+  <script src="assets/editor.js" defer></script>
+</head>
+<body data-base=".">
+  <header class="editor-header">
+    <div class="editor-header-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>EroGame Lite 编辑器</span>
+      </a>
+
+      <div class="editor-header-actions">
+        <a class="button secondary" href="index.html">查看网站</a>
+        <button class="button secondary" type="button" data-open-file>打开 posts.js</button>
+        <button class="button" type="button" data-save-file>保存 posts.js</button>
+        <button class="button secondary" type="button" data-export-file>下载副本</button>
+        <button class="button secondary" type="button" data-reset-draft>恢复内置</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="editor-page">
+    <aside class="editor-sidebar">
+      <div class="sidebar-head">
+        <strong>文章列表</strong>
+        <div class="sidebar-actions">
+          <button class="button" type="button" data-new-post>新建文章</button>
+          <button class="button secondary" type="button" data-duplicate-post>复制当前</button>
+        </div>
+        <input class="editor-search" type="search" data-post-search placeholder="搜索标题或标签">
+        <p class="post-list-meta">先打开 posts.js，编辑后保存，再上传更新。</p>
+      </div>
+      <div class="post-list" data-post-list></div>
+    </aside>
+
+    <section class="editor-main">
+      <div class="editor-panel">
+        <div class="editor-panel-head">
+          <div>
+            <h1 class="editor-panel-title">编辑文章</h1>
+            <div class="editor-status">
+              <span data-file-status>当前使用网站内置文章</span>
+              <span class="dirty" data-dirty-status hidden>有未保存修改</span>
+            </div>
+          </div>
+          <div class="form-row-inline">
+            <button class="button secondary" type="button" data-move-up>上移</button>
+            <button class="button secondary" type="button" data-move-down>下移</button>
+            <button class="button secondary" type="button" data-delete-post>删除</button>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field full">
+            <label for="post-title">标题</label>
+            <textarea id="post-title" data-field="title" placeholder="文章标题"></textarea>
+          </div>
+
+          <div class="form-field">
+            <label for="post-slug">文章路径</label>
+            <div class="form-row-inline">
+              <input id="post-slug" data-field="slug" placeholder="英文或数字路径">
+              <button class="button secondary" type="button" data-generate-slug>自动生成</button>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="post-date">发布日期</label>
+            <input id="post-date" type="date" data-field="date">
+          </div>
+
+          <div class="form-field">
+            <label for="post-type">文章类型</label>
+            <select id="post-type" data-field="type">
+              <option value="game">游戏感想</option>
+              <option value="tutorial">教程</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="post-category">显示分类</label>
+            <input id="post-category" data-field="category" placeholder="游戏感想或教程">
+          </div>
+
+          <div class="form-field full">
+            <label for="post-summary">文章摘要</label>
+            <textarea id="post-summary" data-field="summary" placeholder="用于首页、归档和搜索结果"></textarea>
+          </div>
+
+          <div class="form-field full">
+            <label for="post-tags">标签</label>
+            <input id="post-tags" data-field="tags" placeholder="用英文逗号分隔，例如：动作冒险, 探索, 无剧透">
+          </div>
+
+          <div class="form-field full">
+            <label for="post-cover">封面图片地址</label>
+            <input id="post-cover" data-field="cover" placeholder="https://...">
+          </div>
+
+          <div class="form-field full">
+            <div class="cover-preview" data-cover-preview></div>
+          </div>
+
+          <div class="form-field full">
+            <div class="form-row-inline">
+              <label class="checkbox-line">
+                <input type="checkbox" data-field="featured">
+                首页推荐
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="editor-panel">
+        <div class="editor-panel-head">
+          <h2 class="editor-panel-title">正文</h2>
+          <button class="button secondary" type="button" data-focus-editor>回到正文</button>
+        </div>
+
+        <div class="rich-editor">
+          <div class="editor-toolbar" role="toolbar" aria-label="正文格式">
+            <button class="toolbar-button" type="button" data-command="formatBlock" data-value="h2">大标题</button>
+            <button class="toolbar-button" type="button" data-command="formatBlock" data-value="h3">小标题</button>
+            <button class="toolbar-button" type="button" data-command="formatBlock" data-value="p">正文</button>
+            <button class="toolbar-button" type="button" data-command="bold"><i data-lucide="bold"></i>粗体</button>
+            <button class="toolbar-button" type="button" data-command="italic"><i data-lucide="italic"></i>斜体</button>
+            <button class="toolbar-button" type="button" data-command="insertUnorderedList"><i data-lucide="list"></i>列表</button>
+            <button class="toolbar-button" type="button" data-command="insertOrderedList"><i data-lucide="list-ordered"></i>编号</button>
+            <button class="toolbar-button" type="button" data-command="formatBlock" data-value="blockquote"><i data-lucide="quote"></i>引用</button>
+            <button class="toolbar-button" type="button" data-insert-link><i data-lucide="link"></i>链接</button>
+            <button class="toolbar-button" type="button" data-insert-image><i data-lucide="image"></i>图片</button>
+            <button class="toolbar-button" type="button" data-insert-code><i data-lucide="code-2"></i>代码</button>
+            <button class="toolbar-button" type="button" data-insert-callout><i data-lucide="message-square-warning"></i>提示框</button>
+            <button class="toolbar-button" type="button" data-insert-keypoints><i data-lucide="badge-check"></i>重点框</button>
+            <button class="toolbar-button" type="button" data-command="removeFormat">清除格式</button>
+          </div>
+          <div
+            class="rich-content"
+            contenteditable="true"
+            spellcheck="true"
+            data-rich-content
+            data-placeholder="在这里写正文。可以使用上方工具栏插入标题、图片、代码和提示框。"
+          ></div>
+        </div>
+      </div>
+
+      <div class="preview-panel">
+        <div class="preview-head">
+          <h2 class="preview-title">实时预览</h2>
+          <span class="editor-status">预览只显示正文</span>
+        </div>
+        <div class="preview-body" data-preview-body></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" data-editor-toast></div>
+</body>
+</html>

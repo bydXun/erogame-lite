@@ -1,0 +1,521 @@
+(function () {
+  const STORAGE_KEY = "erogame-editor-draft";
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+
+  let posts = clone(window.EROGAME_POSTS || []);
+  let activeIndex = 0;
+  let fileHandle = null;
+  let dirty = false;
+  let searchValue = "";
+  let autoSaveTimer;
+
+  const listRoot = $("[data-post-list]");
+  const richContent = $("[data-rich-content]");
+  const previewBody = $("[data-preview-body]");
+  const dirtyStatus = $("[data-dirty-status]");
+  const fileStatus = $("[data-file-status]");
+  const coverPreview = $("[data-cover-preview]");
+
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function formatDate(value) {
+    if (!value) return "";
+    const date = new Date(`${value}T00:00:00`);
+    return date.toLocaleDateString("zh-CN");
+  }
+
+  function showToast(message) {
+    const toast = $("[data-editor-toast]");
+    toast.textContent = message;
+    toast.classList.add("show");
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => toast.classList.remove("show"), 2200);
+  }
+
+  function markDirty() {
+    dirty = true;
+    dirtyStatus.hidden = false;
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+      persistDraft();
+      dirtyStatus.textContent = "已自动保存到浏览器草稿";
+    }, 600);
+  }
+
+  function markClean(message = "已保存") {
+    dirty = false;
+    dirtyStatus.hidden = true;
+    dirtyStatus.textContent = "有未保存修改";
+    fileStatus.textContent = message;
+  }
+
+  function persistDraft() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      savedAt: new Date().toISOString(),
+      posts
+    }));
+  }
+
+  function loadDraft() {
+    try {
+      const draft = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      if (!draft?.posts?.length) return null;
+      return draft;
+    } catch {
+      return null;
+    }
+  }
+
+  function normalizePost(post) {
+    return {
+      slug: post.slug || `post-${Date.now()}`,
+      title: post.title || "未命名文章",
+      summary: post.summary || "",
+      type: post.type === "game" ? "game" : "tutorial",
+      category: post.category || (post.type === "game" ? "游戏感想" : "教程"),
+      tags: Array.isArray(post.tags) ? post.tags : [],
+      date: post.date || new Date().toISOString().slice(0, 10),
+      cover: post.cover || "",
+      featured: Boolean(post.featured),
+      content: post.content || "<p></p>"
+    };
+  }
+
+  function getFilteredPosts() {
+    const query = searchValue.trim().toLowerCase();
+    if (!query) return posts.map((post, index) => ({ post, index }));
+
+    return posts
+      .map((post, index) => ({ post, index }))
+      .filter(({ post }) => {
+        const haystack = [post.title, post.category, ...(post.tags || [])].join(" ").toLowerCase();
+        return haystack.includes(query);
+      });
+  }
+
+  function renderPostList() {
+    const filtered = getFilteredPosts();
+    if (!filtered.length) {
+      listRoot.innerHTML = `
+        <div class="editor-empty">
+          <p>没有匹配的文章</p>
+        </div>
+      `;
+      return;
+    }
+
+    listRoot.innerHTML = filtered.map(({ post, index }) => `
+      <button class="post-list-item${index === activeIndex ? " active" : ""}" type="button" data-post-index="${index}">
+        <span class="post-list-title">${escapeHtml(post.title || "未命名文章")}</span>
+        <span class="post-list-meta">${escapeHtml(post.category)} · ${escapeHtml(formatDate(post.date))}</span>
+      </button>
+    `).join("");
+  }
+
+  function setField(name, value) {
+    const field = $(`[data-field="${name}"]`);
+    if (!field) return;
+    if (field.type === "checkbox") field.checked = Boolean(value);
+    else field.value = value ?? "";
+  }
+
+  function getField(name) {
+    const field = $(`[data-field="${name}"]`);
+    if (!field) return undefined;
+    if (field.type === "checkbox") return field.checked;
+    return field.value;
+  }
+
+  function syncForm() {
+    const post = posts[activeIndex];
+    if (!post) {
+      $(".editor-panel")?.setAttribute("hidden", "");
+      return;
+    }
+    $(".editor-panel")?.removeAttribute("hidden");
+
+    setField("title", post.title);
+    setField("slug", post.slug);
+    setField("date", post.date);
+    setField("type", post.type);
+    setField("category", post.category);
+    setField("summary", post.summary);
+    setField("tags", post.tags.join(", "));
+    setField("cover", post.cover);
+    setField("featured", post.featured);
+    richContent.innerHTML = post.content || "<p></p>";
+    renderCoverPreview(post.cover);
+    renderPreview();
+    renderPostList();
+  }
+
+  function collectForm() {
+    const previous = posts[activeIndex];
+    if (!previous) return null;
+
+    const next = {
+      ...previous,
+      title: getField("title").trim() || "未命名文章",
+      slug: getField("slug").trim() || `post-${Date.now()}`,
+      date: getField("date"),
+      type: getField("type"),
+      category: getField("category").trim() || (getField("type") === "game" ? "游戏感想" : "教程"),
+      summary: getField("summary").trim(),
+      tags: getField("tags").split(/[,，]/).map((tag) => tag.trim()).filter(Boolean),
+      cover: getField("cover").trim(),
+      featured: Boolean(getField("featured")),
+      content: richContent.innerHTML
+    };
+
+    posts[activeIndex] = next;
+    renderPreview();
+    renderPostList();
+    return next;
+  }
+
+  function renderCoverPreview(url) {
+    if (!url) {
+      coverPreview.innerHTML = '<div class="cover-placeholder">输入封面图片地址后显示预览</div>';
+      return;
+    }
+    coverPreview.innerHTML = `<img src="${escapeHtml(url)}" alt="封面预览">`;
+  }
+
+  function renderPreview() {
+    if (!previewBody) return;
+    previewBody.innerHTML = richContent.innerHTML || "<p>正文预览会显示在这里。</p>";
+  }
+
+  function selectPost(index) {
+    if (dirty) collectForm();
+    activeIndex = index;
+    syncForm();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function createPost() {
+    if (dirty) collectForm();
+    const date = new Date().toISOString().slice(0, 10);
+    const newPost = normalizePost({
+      slug: `post-${Date.now()}`,
+      title: "未命名文章",
+      date,
+      type: "game",
+      category: "游戏感想",
+      tags: [],
+      featured: false,
+      summary: "",
+      cover: "",
+      content: "<p></p>"
+    });
+    posts.unshift(newPost);
+    activeIndex = 0;
+    syncForm();
+    markDirty();
+    $("[data-field='title']").focus();
+  }
+
+  function duplicatePost() {
+    if (!posts[activeIndex]) return;
+    collectForm();
+    const copy = clone(posts[activeIndex]);
+    copy.title = `${copy.title}（副本）`;
+    copy.slug = `${copy.slug}-copy-${Date.now().toString().slice(-4)}`;
+    copy.date = new Date().toISOString().slice(0, 10);
+    posts.splice(activeIndex + 1, 0, copy);
+    activeIndex += 1;
+    syncForm();
+    markDirty();
+  }
+
+  function deletePost() {
+    if (!posts[activeIndex]) return;
+    if (!window.confirm(`确定删除“${posts[activeIndex].title}”吗？`)) return;
+    posts.splice(activeIndex, 1);
+    activeIndex = Math.max(0, Math.min(activeIndex, posts.length - 1));
+    syncForm();
+    markDirty();
+  }
+
+  function movePost(offset) {
+    const nextIndex = activeIndex + offset;
+    if (nextIndex < 0 || nextIndex >= posts.length) return;
+    collectForm();
+    [posts[activeIndex], posts[nextIndex]] = [posts[nextIndex], posts[activeIndex]];
+    activeIndex = nextIndex;
+    syncForm();
+    markDirty();
+  }
+
+  function generateSlug() {
+    const now = new Date();
+    const stamp = [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, "0"),
+      String(now.getDate()).padStart(2, "0"),
+      String(now.getHours()).padStart(2, "0"),
+      String(now.getMinutes()).padStart(2, "0")
+    ].join("");
+    setField("slug", `post-${stamp}`);
+    markDirty();
+  }
+
+  function runCommand(command, value) {
+    richContent.focus();
+    document.execCommand(command, false, value);
+    collectForm();
+    renderPreview();
+    markDirty();
+  }
+
+  function insertHtml(html) {
+    richContent.focus();
+    document.execCommand("insertHTML", false, html);
+    collectForm();
+    renderPreview();
+    markDirty();
+  }
+
+  function serializePosts() {
+    if (dirty) collectForm();
+    return `window.EROGAME_POSTS = ${JSON.stringify(posts, null, 2)};\n`;
+  }
+
+  function downloadFile() {
+    const blob = new Blob([serializePosts()], { type: "text/javascript;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "posts.js";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    showToast("已下载更新后的 posts.js");
+  }
+
+  function resetDraft() {
+    if (!window.confirm("确定放弃当前浏览器草稿，并恢复网站内置文章吗？")) return;
+    localStorage.removeItem(STORAGE_KEY);
+    posts = clone(window.EROGAME_POSTS || []).map(normalizePost);
+    activeIndex = 0;
+    fileHandle = null;
+    syncForm();
+    markClean("已恢复网站内置文章");
+    showToast("已恢复内置文章");
+  }
+
+  function parsePostsFile(text) {
+    const sandbox = { window: {} };
+    Function("window", text)(sandbox.window);
+    if (!Array.isArray(sandbox.window.EROGAME_POSTS)) {
+      throw new Error("文件中没有 window.EROGAME_POSTS 数组");
+    }
+    posts = sandbox.window.EROGAME_POSTS.map(normalizePost);
+    activeIndex = 0;
+    syncForm();
+    markDirty();
+  }
+
+  async function openPostsFile() {
+    if ("showOpenFilePicker" in window) {
+      try {
+        const [handle] = await window.showOpenFilePicker({
+          multiple: false,
+          types: [{
+            description: "posts.js",
+            accept: { "text/javascript": [".js"] }
+          }]
+        });
+        fileHandle = handle;
+        const file = await handle.getFile();
+        parsePostsFile(await file.text());
+        fileStatus.textContent = `已打开：${file.name}`;
+        showToast("文章数据已载入");
+        return;
+      } catch (error) {
+        if (error?.name === "AbortError") return;
+      }
+    }
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".js,text/javascript";
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      parsePostsFile(await file.text());
+      fileHandle = null;
+      fileStatus.textContent = `已导入：${file.name}`;
+      showToast("文章数据已导入");
+    });
+    input.click();
+  }
+
+  async function savePostsFile() {
+    if (dirty) collectForm();
+
+    if (fileHandle) {
+      const permission = await fileHandle.queryPermission({ mode: "readwrite" });
+      if (permission !== "granted") {
+        await fileHandle.requestPermission({ mode: "readwrite" });
+      }
+      const writable = await fileHandle.createWritable();
+      await writable.write(serializePosts());
+      await writable.close();
+      markClean(`已保存到：${fileHandle.name}`);
+      showToast("posts.js 已保存");
+      return;
+    }
+
+    downloadFile();
+    showToast("已下载副本。请用 Cloudflare 重新上传该文件。");
+  }
+
+  function bindFormEvents() {
+    const fields = $$("[data-field]");
+    fields.forEach((field) => {
+      field.addEventListener("input", () => {
+        if (field.dataset.field === "type") {
+          const type = field.value;
+          setField("category", type === "game" ? "游戏感想" : "教程");
+        }
+        if (field.dataset.field === "cover") {
+          renderCoverPreview(field.value.trim());
+        }
+        collectForm();
+        markDirty();
+      });
+      field.addEventListener("change", () => {
+        collectForm();
+        markDirty();
+      });
+    });
+
+    richContent.addEventListener("input", () => {
+      collectForm();
+      renderPreview();
+      markDirty();
+    });
+  }
+
+  function bindToolbar() {
+    $$("[data-command]").forEach((button) => {
+      button.addEventListener("click", () => {
+        runCommand(button.dataset.command, button.dataset.value || null);
+      });
+    });
+
+    $("[data-insert-link]").addEventListener("click", () => {
+      const url = window.prompt("输入链接地址");
+      if (!url) return;
+      runCommand("createLink", url);
+    });
+
+    $("[data-insert-image]").addEventListener("click", () => {
+      const url = window.prompt("输入图片地址");
+      if (!url) return;
+      insertHtml(`<figure><img src="${escapeHtml(url)}" alt=""><figcaption>图片说明</figcaption></figure><p></p>`);
+    });
+
+    $("[data-insert-code]").addEventListener("click", () => {
+      const code = window.prompt("粘贴代码内容");
+      if (!code) return;
+      insertHtml(`<pre><code>${escapeHtml(code)}</code></pre><p></p>`);
+    });
+
+    $("[data-insert-callout]").addEventListener("click", () => {
+      const text = window.prompt("输入提示内容");
+      if (!text) return;
+      insertHtml(`<div class="callout"><strong>提示：</strong>${escapeHtml(text)}</div><p></p>`);
+    });
+
+    $("[data-insert-keypoints]").addEventListener("click", () => {
+      const input = window.prompt("每行输入一个重点");
+      if (!input) return;
+      const list = input.split("\n").map((item) => item.trim()).filter(Boolean);
+      insertHtml(`<div class="key-points"><h3>重点整理</h3><ul>${list.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div><p></p>`);
+    });
+  }
+
+  function bindActions() {
+    $("[data-new-post]").addEventListener("click", createPost);
+    $("[data-duplicate-post]").addEventListener("click", duplicatePost);
+    $("[data-delete-post]").addEventListener("click", deletePost);
+    $("[data-move-up]").addEventListener("click", () => movePost(-1));
+    $("[data-move-down]").addEventListener("click", () => movePost(1));
+    $("[data-generate-slug]").addEventListener("click", generateSlug);
+    $("[data-open-file]").addEventListener("click", openPostsFile);
+    $("[data-save-file]").addEventListener("click", savePostsFile);
+    $("[data-export-file]").addEventListener("click", downloadFile);
+    $("[data-reset-draft]").addEventListener("click", resetDraft);
+    $("[data-focus-editor]").addEventListener("click", () => richContent.focus());
+
+    listRoot.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-post-index]");
+      if (!button) return;
+      selectPost(Number(button.dataset.postIndex));
+    });
+
+    $("[data-post-search]").addEventListener("input", (event) => {
+      searchValue = event.target.value;
+      renderPostList();
+    });
+
+    window.addEventListener("beforeunload", (event) => {
+      if (!dirty) return;
+      event.preventDefault();
+      event.returnValue = "";
+    });
+  }
+
+  function init() {
+    const draft = loadDraft();
+    if (draft) {
+      posts = draft.posts.map(normalizePost);
+      fileStatus.textContent = `已恢复浏览器草稿 · ${new Date(draft.savedAt).toLocaleString("zh-CN")}`;
+    } else {
+      posts = posts.map(normalizePost);
+      fileStatus.textContent = "当前使用网站内置文章";
+    }
+
+    if (!posts.length) {
+      posts = [normalizePost({
+        slug: `post-${Date.now()}`,
+        title: "未命名文章",
+        date: new Date().toISOString().slice(0, 10),
+        category: "游戏感想",
+        tags: [],
+        featured: false,
+        summary: "",
+        cover: "",
+        content: "<p></p>"
+      })];
+    }
+
+    activeIndex = Math.min(activeIndex, posts.length - 1);
+    bindFormEvents();
+    bindToolbar();
+    bindActions();
+    syncForm();
+    window.lucide?.createIcons();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();

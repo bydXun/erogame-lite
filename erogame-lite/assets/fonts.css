@@ -1,0 +1,21 @@
+/*
+ * Noto Sans SC Variable
+ * Source: @fontsource-variable/noto-sans-sc
+ * License: SIL Open Font License 1.1
+ * https://github.com/notofonts/noto-cjk/blob/main/Sans/LICENSE
+ */
+@import url("https://cdn.jsdelivr.net/npm/@fontsource-variable/noto-sans-sc@5.3.0/index.css");
+
+:root {
+  --font-sans:
+    "Noto Sans SC Variable",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Helvetica Neue",
+    Helvetica,
+    Arial,
+    "PingFang SC",
+    "Hiragino Sans GB",
+    "Microsoft YaHei",
+    sans-serif;
+}

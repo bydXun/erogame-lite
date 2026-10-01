@@ -3,21 +3,107 @@ const JSON_HEADERS = {
   "Cache-Control": "no-store"
 };
 
-function json(data, status = 200) {
+function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: JSON_HEADERS
+    headers: { ...JSON_HEADERS, ...extraHeaders }
   });
 }
 
-function adminEmail(request) {
-  return request.headers.get("Cf-Access-Authenticated-User-Email") || "";
+function bytesToHex(bytes) {
+  return [...new Uint8Array(bytes)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 }
 
-function requireAdmin(request) {
-  const email = adminEmail(request);
-  if (!email) return { error: json({ error: "管理员未登录" }, 401) };
-  return { email };
+function randomHex(length = 32) {
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return bytesToHex(bytes);
+}
+
+async function hashPassword(password, salt) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: new TextEncoder().encode(salt),
+      iterations: 120000,
+      hash: "SHA-256"
+    },
+    key,
+    256
+  );
+  return bytesToHex(bits);
+}
+
+async function hashSessionToken(token) {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(token)
+  );
+  return bytesToHex(digest);
+}
+
+function parseCookies(request) {
+  const header = request.headers.get("Cookie") || "";
+  return Object.fromEntries(
+    header
+      .split(";")
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .map((part) => {
+        const index = part.indexOf("=");
+        return index === -1
+          ? [part, ""]
+          : [part.slice(0, index), decodeURIComponent(part.slice(index + 1))];
+      })
+  );
+}
+
+async function getCurrentAdmin(env, request) {
+  const token = parseCookies(request).erogame_session;
+  if (!token) return null;
+  await ensureDatabase(env);
+  const tokenHash = await hashSessionToken(token);
+  const row = await env.DB.prepare(`
+    SELECT
+      admin_users.id,
+      admin_users.username,
+      admin_sessions.expires_at
+    FROM admin_sessions
+    JOIN admin_users ON admin_users.id = admin_sessions.admin_id
+    WHERE admin_sessions.token_hash = ?
+    LIMIT 1
+  `).bind(tokenHash).first();
+  if (!row || new Date(row.expires_at).getTime() < Date.now()) return null;
+  return row;
+}
+
+async function requireAdmin(env, request) {
+  const admin = await getCurrentAdmin(env, request);
+  if (!admin) return { error: json({ error: "管理员未登录" }, 401) };
+  return { admin };
+}
+
+async function createSession(env, adminId) {
+  const token = randomHex(32);
+  const tokenHash = await hashSessionToken(token);
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  await env.DB.prepare(`
+    INSERT INTO admin_sessions (token_hash, admin_id, expires_at, created_at)
+    VALUES (?, ?, ?, ?)
+  `).bind(tokenHash, adminId, expiresAt, new Date().toISOString()).run();
+  return {
+    token,
+    cookie: `erogame_session=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=2592000`
+  };
 }
 
 async function ensureDatabase(env) {
@@ -45,6 +131,23 @@ async function ensureDatabase(env) {
       key TEXT PRIMARY KEY,
       mime_type TEXT NOT NULL,
       data BLOB NOT NULL,
+      created_at TEXT NOT NULL
+    )
+  `).run();
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS admin_users (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      username TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      salt TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    )
+  `).run();
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS admin_sessions (
+      token_hash TEXT PRIMARY KEY,
+      admin_id INTEGER NOT NULL,
+      expires_at TEXT NOT NULL,
       created_at TEXT NOT NULL
     )
   `).run();
@@ -200,7 +303,91 @@ async function handleApi(request, env, url) {
   }
 
   if (url.pathname.startsWith("/api/admin/")) {
-    const auth = requireAdmin(request);
+    if (url.pathname === "/api/admin/status" && request.method === "GET") {
+      await ensureDatabase(env);
+      const admin = await env.DB.prepare("SELECT id FROM admin_users WHERE id = 1").first();
+      return json({ configured: Boolean(admin) });
+    }
+
+    if (url.pathname === "/api/admin/setup" && request.method === "POST") {
+      if (!env.ADMIN_SETUP_TOKEN) {
+        return json({ error: "服务器尚未配置 ADMIN_SETUP_TOKEN" }, 503);
+      }
+      await ensureDatabase(env);
+      const exists = await env.DB.prepare("SELECT id FROM admin_users WHERE id = 1").first();
+      if (exists) return json({ error: "管理员已经初始化" }, 409);
+
+      const body = await request.json();
+      if (body.setupToken !== env.ADMIN_SETUP_TOKEN) {
+        return json({ error: "初始化密钥不正确" }, 403);
+      }
+      const username = String(body.username || "").trim();
+      const password = String(body.password || "");
+      if (!username || password.length < 8) {
+        return json({ error: "用户名不能为空，密码至少 8 位" }, 400);
+      }
+      const salt = randomHex(16);
+      const passwordHash = await hashPassword(password, salt);
+      await env.DB.prepare(`
+        INSERT INTO admin_users (id, username, password_hash, salt, created_at)
+        VALUES (1, ?, ?, ?, ?)
+      `).bind(username, passwordHash, salt, new Date().toISOString()).run();
+      const session = await createSession(env, 1);
+      return json(
+        { admin: { username } },
+        201,
+        { "Set-Cookie": session.cookie }
+      );
+    }
+
+    if (url.pathname === "/api/admin/login" && request.method === "POST") {
+      await ensureDatabase(env);
+      const body = await request.json();
+      const admin = await env.DB.prepare(
+        "SELECT * FROM admin_users WHERE id = 1 LIMIT 1"
+      ).first();
+      if (!admin) return json({ error: "管理员尚未初始化" }, 409);
+      const passwordHash = await hashPassword(
+        String(body.password || ""),
+        admin.salt
+      );
+      if (
+        String(body.username || "").trim() !== admin.username ||
+        passwordHash !== admin.password_hash
+      ) {
+        return json({ error: "用户名或密码错误" }, 401);
+      }
+      const session = await createSession(env, 1);
+      return json(
+        { admin: { username: admin.username } },
+        200,
+        { "Set-Cookie": session.cookie }
+      );
+    }
+
+    if (url.pathname === "/api/admin/logout" && request.method === "POST") {
+      const token = parseCookies(request).erogame_session;
+      if (token) {
+        await ensureDatabase(env);
+        await env.DB.prepare(
+          "DELETE FROM admin_sessions WHERE token_hash = ?"
+        ).bind(await hashSessionToken(token)).run();
+      }
+      return json(
+        { ok: true },
+        200,
+        { "Set-Cookie": "erogame_session=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0" }
+      );
+    }
+
+    if (url.pathname === "/api/admin/me" && request.method === "GET") {
+      const admin = await getCurrentAdmin(env, request);
+      return admin
+        ? json({ admin: { id: admin.id, username: admin.username } })
+        : json({ error: "管理员未登录" }, 401);
+    }
+
+    const auth = await requireAdmin(env, request);
     if (auth.error) return auth.error;
 
     if (url.pathname === "/api/admin/posts" && request.method === "GET") {

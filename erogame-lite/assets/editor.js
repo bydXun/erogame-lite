@@ -1,11 +1,19 @@
 (function () {
   const STORAGE_KEY = "erogame-editor-draft";
+  const GITHUB_TOKEN_KEY = "erogame-github-token";
+  const GITHUB_CLIENT_ID = "Ov23ctBFP3e6Vs0k68J4";
+  const GITHUB_OWNER = "bydXun";
+  const GITHUB_REPO = "erogame-lite";
+  const GITHUB_BRANCH = "main";
+  const GITHUB_FILE_PATH = "erogame-lite/assets/posts.js";
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
   let posts = clone(window.EROGAME_POSTS || []);
   let activeIndex = 0;
   let fileHandle = null;
+  let githubToken = localStorage.getItem(GITHUB_TOKEN_KEY) || "";
+  let deviceFlowTimer = null;
   let dirty = false;
   let searchValue = "";
   let autoSaveTimer;
@@ -15,6 +23,7 @@
   const previewBody = $("[data-preview-body]");
   const dirtyStatus = $("[data-dirty-status]");
   const fileStatus = $("[data-file-status]");
+  const githubStatus = $("[data-github-status]");
   const coverPreview = $("[data-cover-preview]");
 
   function clone(value) {
@@ -42,6 +51,225 @@
     toast.classList.add("show");
     clearTimeout(showToast.timer);
     showToast.timer = setTimeout(() => toast.classList.remove("show"), 2200);
+  }
+
+  function setGithubStatus(message, connected = false) {
+    githubStatus.textContent = message;
+    githubStatus.style.color = connected ? "var(--green)" : "";
+    $("[data-github-connect]").textContent = connected ? "断开 GitHub" : "连接 GitHub";
+  }
+
+  function githubHeaders() {
+    return {
+      "Accept": "application/vnd.github+json",
+      "Authorization": `Bearer ${githubToken}`,
+      "X-GitHub-Api-Version": "2022-11-28"
+    };
+  }
+
+  function encodeBase64Utf8(value) {
+    const bytes = new TextEncoder().encode(value);
+    let binary = "";
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return btoa(binary);
+  }
+
+  function decodeBase64Utf8(value) {
+    const binary = atob(value.replaceAll("\n", ""));
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  }
+
+  function parsePostsSource(source) {
+    const sandbox = { window: {} };
+    Function("window", source)(sandbox.window);
+    if (!Array.isArray(sandbox.window.EROGAME_POSTS)) {
+      throw new Error("GitHub 文件中没有有效的文章数据");
+    }
+    return sandbox.window.EROGAME_POSTS.map(normalizePost);
+  }
+
+  async function verifyGithubToken() {
+    if (!githubToken) {
+      setGithubStatus("GitHub 未连接");
+      return false;
+    }
+
+    try {
+      const response = await fetch("https://api.github.com/user", {
+        headers: githubHeaders()
+      });
+      if (!response.ok) throw new Error("token invalid");
+      const user = await response.json();
+      setGithubStatus(`GitHub 已连接：${user.login}`, true);
+      return true;
+    } catch {
+      githubToken = "";
+      localStorage.removeItem(GITHUB_TOKEN_KEY);
+      setGithubStatus("GitHub 登录已失效");
+      return false;
+    }
+  }
+
+  async function loadGithubPosts() {
+    const response = await fetch(
+      `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}?ref=${GITHUB_BRANCH}`,
+      { headers: githubHeaders() }
+    );
+    if (!response.ok) throw new Error(`读取 GitHub 文章失败：${response.status}`);
+    const data = await response.json();
+    return {
+      sha: data.sha,
+      posts: parsePostsSource(decodeBase64Utf8(data.content))
+    };
+  }
+
+  function openGithubModal() {
+    $("#github-modal").classList.add("open");
+    document.body.classList.add("modal-open");
+  }
+
+  function closeGithubModal() {
+    clearInterval(deviceFlowTimer);
+    $("#github-modal").classList.remove("open");
+    document.body.classList.remove("modal-open");
+  }
+
+  async function connectGithub() {
+    if (githubToken) {
+      githubToken = "";
+      localStorage.removeItem(GITHUB_TOKEN_KEY);
+      setGithubStatus("GitHub 未连接");
+      showToast("已断开 GitHub");
+      return;
+    }
+
+    openGithubModal();
+    $("[data-device-code]").textContent = "--------";
+    $("[data-device-status]").textContent = "正在申请授权码…";
+
+    let device;
+    try {
+      const response = await fetch("https://github.com/login/device/code", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          client_id: GITHUB_CLIENT_ID,
+          scope: "public_repo"
+        })
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      device = await response.json();
+    } catch {
+      $("[data-device-status]").textContent = "无法连接 GitHub 授权接口，请确认 OAuth App 已开启 Device Flow。";
+      return;
+    }
+
+    $("[data-device-code]").textContent = device.user_code;
+    $("[data-device-status]").textContent = "等待 GitHub 确认授权…";
+    $("[data-open-github-device]").href = device.verification_uri;
+
+    clearInterval(deviceFlowTimer);
+    deviceFlowTimer = setInterval(async () => {
+      try {
+        const response = await fetch("https://github.com/login/oauth/access_token", {
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            client_id: GITHUB_CLIENT_ID,
+            device_code: device.device_code,
+            grant_type: "urn:ietf:params:oauth:grant-type:device_code"
+          })
+        });
+        const result = await response.json();
+
+        if (result.access_token) {
+          clearInterval(deviceFlowTimer);
+          githubToken = result.access_token;
+          localStorage.setItem(GITHUB_TOKEN_KEY, githubToken);
+          setGithubStatus("GitHub 已连接", true);
+          closeGithubModal();
+          showToast("GitHub 连接成功");
+
+          if (!dirty) {
+            try {
+              const remote = await loadGithubPosts();
+              posts = remote.posts;
+              activeIndex = 0;
+              syncForm();
+              showToast("已载入 GitHub 最新文章");
+            } catch {
+              showToast("已连接，但从 GitHub 读取文章失败");
+            }
+          }
+          return;
+        }
+
+        if (result.error === "authorization_pending" || result.error === "slow_down") return;
+        clearInterval(deviceFlowTimer);
+        $("[data-device-status]").textContent = `授权失败：${result.error_description || result.error}`;
+      } catch {
+        $("[data-device-status]").textContent = "等待授权时网络连接失败，请关闭后重试。";
+      }
+    }, Math.max(5, Number(device.interval) || 5) * 1000);
+  }
+
+  async function publishGithub() {
+    const connected = await verifyGithubToken();
+    if (!connected) {
+      showToast("请先连接 GitHub");
+      await connectGithub();
+      return;
+    }
+
+    if (dirty) collectForm();
+    const source = serializePosts();
+    setGithubStatus("正在发布到 GitHub…");
+
+    try {
+      let sha;
+      try {
+        const existing = await loadGithubPosts();
+        sha = existing.sha;
+      } catch {
+        sha = undefined;
+      }
+
+      const response = await fetch(
+        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`,
+        {
+          method: "PUT",
+          headers: {
+            ...githubHeaders(),
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: `更新 EroGame Lite 文章 · ${new Date().toLocaleString("zh-CN")}`,
+            content: encodeBase64Utf8(source),
+            branch: GITHUB_BRANCH,
+            ...(sha ? { sha } : {})
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || `HTTP ${response.status}`);
+      }
+
+      markClean("已发布到 GitHub，等待 Cloudflare 自动部署");
+      setGithubStatus("GitHub 已连接", true);
+      showToast("发布成功，Cloudflare 正在自动部署");
+    } catch (error) {
+      setGithubStatus("发布失败");
+      showToast(`发布失败：${error.message}`);
+    }
   }
 
   function markDirty() {
@@ -461,7 +689,26 @@
     $("[data-save-file]").addEventListener("click", savePostsFile);
     $("[data-export-file]").addEventListener("click", downloadFile);
     $("[data-reset-draft]").addEventListener("click", resetDraft);
+    $("[data-github-connect]").addEventListener("click", connectGithub);
+    $("[data-github-publish]").addEventListener("click", publishGithub);
     $("[data-focus-editor]").addEventListener("click", () => richContent.focus());
+
+    $("#github-modal").addEventListener("click", (event) => {
+      if (event.target === $("#github-modal") || event.target.closest("[data-close-github-modal]")) {
+        closeGithubModal();
+      }
+    });
+
+    $("[data-copy-device-code]").addEventListener("click", async () => {
+      const code = $("[data-device-code]").textContent.trim();
+      if (!code || code === "--------") return;
+      try {
+        await navigator.clipboard.writeText(code);
+        showToast("授权码已复制");
+      } catch {
+        showToast("复制失败，请手动输入授权码");
+      }
+    });
 
     listRoot.addEventListener("click", (event) => {
       const button = event.target.closest("[data-post-index]");
@@ -510,6 +757,7 @@
     bindToolbar();
     bindActions();
     syncForm();
+    void verifyGithubToken();
     window.lucide?.createIcons();
   }
 

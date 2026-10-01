@@ -279,6 +279,94 @@ async function seedPosts(env, incomingPosts) {
   if (statements.length) await env.DB.batch(statements);
 }
 
+async function handleAdminAuth(request, env, url) {
+  if (url.pathname === "/api/admin/status" && request.method === "GET") {
+    await ensureDatabase(env);
+    const admin = await env.DB.prepare("SELECT id FROM admin_users WHERE id = 1").first();
+    return json({ configured: Boolean(admin) });
+  }
+
+  if (url.pathname === "/api/admin/setup" && request.method === "POST") {
+    if (!env.ADMIN_SETUP_TOKEN) {
+      return json({ error: "服务器尚未配置 ADMIN_SETUP_TOKEN" }, 503);
+    }
+    await ensureDatabase(env);
+    const exists = await env.DB.prepare("SELECT id FROM admin_users WHERE id = 1").first();
+    if (exists) return json({ error: "管理员已经初始化" }, 409);
+
+    const body = await request.json();
+    if (body.setupToken !== env.ADMIN_SETUP_TOKEN) {
+      return json({ error: "初始化密钥不正确" }, 403);
+    }
+    const username = String(body.username || "").trim();
+    const password = String(body.password || "");
+    if (!username || password.length < 8) {
+      return json({ error: "用户名不能为空，密码至少 8 位" }, 400);
+    }
+    const salt = randomHex(16);
+    const passwordHash = await hashPassword(password, salt);
+    await env.DB.prepare(`
+      INSERT INTO admin_users (id, username, password_hash, salt, created_at)
+      VALUES (1, ?, ?, ?, ?)
+    `).bind(username, passwordHash, salt, new Date().toISOString()).run();
+    const session = await createSession(env, 1);
+    return json(
+      { admin: { username } },
+      201,
+      { "Set-Cookie": session.cookie }
+    );
+  }
+
+  if (url.pathname === "/api/admin/login" && request.method === "POST") {
+    await ensureDatabase(env);
+    const body = await request.json();
+    const admin = await env.DB.prepare(
+      "SELECT * FROM admin_users WHERE id = 1 LIMIT 1"
+    ).first();
+    if (!admin) return json({ error: "管理员尚未初始化" }, 409);
+    const passwordHash = await hashPassword(
+      String(body.password || ""),
+      admin.salt
+    );
+    if (
+      String(body.username || "").trim() !== admin.username ||
+      passwordHash !== admin.password_hash
+    ) {
+      return json({ error: "用户名或密码错误" }, 401);
+    }
+    const session = await createSession(env, 1);
+    return json(
+      { admin: { username: admin.username } },
+      200,
+      { "Set-Cookie": session.cookie }
+    );
+  }
+
+  if (url.pathname === "/api/admin/logout" && request.method === "POST") {
+    const token = parseCookies(request).erogame_session;
+    if (token) {
+      await ensureDatabase(env);
+      await env.DB.prepare(
+        "DELETE FROM admin_sessions WHERE token_hash = ?"
+      ).bind(await hashSessionToken(token)).run();
+    }
+    return json(
+      { ok: true },
+      200,
+      { "Set-Cookie": "erogame_session=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0" }
+    );
+  }
+
+  if (url.pathname === "/api/admin/me" && request.method === "GET") {
+    const admin = await getCurrentAdmin(env, request);
+    return admin
+      ? json({ admin: { id: admin.id, username: admin.username } })
+      : json({ error: "管理员未登录" }, 401);
+  }
+
+  return null;
+}
+
 async function handleApi(request, env, url) {
   if (url.pathname === "/api/posts" && request.method === "GET") {
     try {
@@ -302,91 +390,10 @@ async function handleApi(request, env, url) {
     }
   }
 
+  const authResponse = await handleAdminAuth(request, env, url);
+  if (authResponse) return authResponse;
+
   if (url.pathname.startsWith("/api/admin/")) {
-    if (url.pathname === "/api/admin/status" && request.method === "GET") {
-      await ensureDatabase(env);
-      const admin = await env.DB.prepare("SELECT id FROM admin_users WHERE id = 1").first();
-      return json({ configured: Boolean(admin) });
-    }
-
-    if (url.pathname === "/api/admin/setup" && request.method === "POST") {
-      if (!env.ADMIN_SETUP_TOKEN) {
-        return json({ error: "服务器尚未配置 ADMIN_SETUP_TOKEN" }, 503);
-      }
-      await ensureDatabase(env);
-      const exists = await env.DB.prepare("SELECT id FROM admin_users WHERE id = 1").first();
-      if (exists) return json({ error: "管理员已经初始化" }, 409);
-
-      const body = await request.json();
-      if (body.setupToken !== env.ADMIN_SETUP_TOKEN) {
-        return json({ error: "初始化密钥不正确" }, 403);
-      }
-      const username = String(body.username || "").trim();
-      const password = String(body.password || "");
-      if (!username || password.length < 8) {
-        return json({ error: "用户名不能为空，密码至少 8 位" }, 400);
-      }
-      const salt = randomHex(16);
-      const passwordHash = await hashPassword(password, salt);
-      await env.DB.prepare(`
-        INSERT INTO admin_users (id, username, password_hash, salt, created_at)
-        VALUES (1, ?, ?, ?, ?)
-      `).bind(username, passwordHash, salt, new Date().toISOString()).run();
-      const session = await createSession(env, 1);
-      return json(
-        { admin: { username } },
-        201,
-        { "Set-Cookie": session.cookie }
-      );
-    }
-
-    if (url.pathname === "/api/admin/login" && request.method === "POST") {
-      await ensureDatabase(env);
-      const body = await request.json();
-      const admin = await env.DB.prepare(
-        "SELECT * FROM admin_users WHERE id = 1 LIMIT 1"
-      ).first();
-      if (!admin) return json({ error: "管理员尚未初始化" }, 409);
-      const passwordHash = await hashPassword(
-        String(body.password || ""),
-        admin.salt
-      );
-      if (
-        String(body.username || "").trim() !== admin.username ||
-        passwordHash !== admin.password_hash
-      ) {
-        return json({ error: "用户名或密码错误" }, 401);
-      }
-      const session = await createSession(env, 1);
-      return json(
-        { admin: { username: admin.username } },
-        200,
-        { "Set-Cookie": session.cookie }
-      );
-    }
-
-    if (url.pathname === "/api/admin/logout" && request.method === "POST") {
-      const token = parseCookies(request).erogame_session;
-      if (token) {
-        await ensureDatabase(env);
-        await env.DB.prepare(
-          "DELETE FROM admin_sessions WHERE token_hash = ?"
-        ).bind(await hashSessionToken(token)).run();
-      }
-      return json(
-        { ok: true },
-        200,
-        { "Set-Cookie": "erogame_session=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0" }
-      );
-    }
-
-    if (url.pathname === "/api/admin/me" && request.method === "GET") {
-      const admin = await getCurrentAdmin(env, request);
-      return admin
-        ? json({ admin: { id: admin.id, username: admin.username } })
-        : json({ error: "管理员未登录" }, 401);
-    }
-
     const auth = await requireAdmin(env, request);
     if (auth.error) return auth.error;
 

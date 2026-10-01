@@ -23,6 +23,8 @@
 
       <div class="editor-header-actions">
         <a class="button secondary" href="index.html">查看网站</a>
+        <button class="button" type="button" data-github-connect>连接 GitHub</button>
+        <button class="button secondary" type="button" data-github-publish>发布到 GitHub</button>
         <button class="button secondary" type="button" data-open-file>打开 posts.js</button>
         <button class="button" type="button" data-save-file>保存 posts.js</button>
         <button class="button secondary" type="button" data-export-file>下载副本</button>
@@ -40,7 +42,7 @@
           <button class="button secondary" type="button" data-duplicate-post>复制当前</button>
         </div>
         <input class="editor-search" type="search" data-post-search placeholder="搜索标题或标签">
-        <p class="post-list-meta">先打开 posts.js，编辑后保存，再上传更新。</p>
+        <p class="post-list-meta">连接 GitHub 后可直接发布；也可以打开本地 posts.js 编辑。</p>
       </div>
       <div class="post-list" data-post-list></div>
     </aside>
@@ -52,6 +54,7 @@
             <h1 class="editor-panel-title">编辑文章</h1>
             <div class="editor-status">
               <span data-file-status>当前使用网站内置文章</span>
+              <span data-github-status>GitHub 未连接</span>
               <span class="dirty" data-dirty-status hidden>有未保存修改</span>
             </div>
           </div>
@@ -166,6 +169,26 @@
       </div>
     </section>
   </main>
+
+  <div class="modal" id="github-modal" role="dialog" aria-modal="true" aria-labelledby="github-modal-title">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 class="modal-title" id="github-modal-title">连接 GitHub</h2>
+        <button class="icon-button" type="button" data-close-github-modal aria-label="关闭">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <p class="modal-copy">在 GitHub 页面输入下面的授权码，并确认授权。</p>
+      <div class="device-code" data-device-code>--------</div>
+      <p class="modal-copy" data-device-status>正在申请授权码…</p>
+      <div class="hero-actions">
+        <a class="button" data-open-github-device href="https://github.com/login/device" target="_blank" rel="noopener">
+          打开 GitHub 授权页
+        </a>
+        <button class="button secondary" type="button" data-copy-device-code>复制授权码</button>
+      </div>
+    </div>
+  </div>
 
   <div class="toast" data-editor-toast></div>
 </body>

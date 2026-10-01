@@ -322,22 +322,22 @@
       button.addEventListener("click", () => runCommand(button.dataset.command, button.dataset.value));
     });
 
-    $("[data-insert-link]").addEventListener("click", () => {
+    $("[data-insert-link]")?.addEventListener("click", () => {
       const url = prompt("输入链接地址");
       if (url) runCommand("createLink", url);
     });
 
-    $("[data-insert-code]").addEventListener("click", () => {
+    $("[data-insert-code]")?.addEventListener("click", () => {
       const code = prompt("粘贴代码内容");
       if (code) insertHtml(`<pre><code>${escapeHtml(code)}</code></pre><p></p>`);
     });
 
-    $("[data-insert-callout]").addEventListener("click", () => {
+    $("[data-insert-callout]")?.addEventListener("click", () => {
       const text = prompt("输入提示内容");
       if (text) insertHtml(`<div class="callout"><strong>提示：</strong>${escapeHtml(text)}</div><p></p>`);
     });
 
-    $("[data-insert-keypoints]").addEventListener("click", () => {
+    $("[data-insert-keypoints]")?.addEventListener("click", () => {
       const input = prompt("每行输入一个重点");
       if (!input) return;
       const items = input.split("\n").map((item) => item.trim()).filter(Boolean);

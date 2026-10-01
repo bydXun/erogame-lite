@@ -23,9 +23,9 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/editor" || url.pathname === "/editor/") {
-      const redirectUrl = new URL("/editor.html", url);
-      redirectUrl.search = url.search;
-      return Response.redirect(redirectUrl, 302);
+      const assetUrl = new URL("/editor.html", url);
+      assetUrl.search = url.search;
+      return env.ASSETS.fetch(new Request(assetUrl, request));
     }
 
     if (url.pathname === "/api/github/device/code" && request.method === "POST") {

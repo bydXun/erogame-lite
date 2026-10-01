@@ -481,9 +481,19 @@ async function handleApi(request, env, url) {
 
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
-    const apiResponse = await handleApi(request, env, url);
-    if (apiResponse) return apiResponse;
-    return env.ASSETS.fetch(request);
+    try {
+      const url = new URL(request.url);
+      const apiResponse = await handleApi(request, env, url);
+      if (apiResponse) return apiResponse;
+      return env.ASSETS.fetch(request);
+    } catch (error) {
+      return json(
+        {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined
+        },
+        500
+      );
+    }
   }
 };

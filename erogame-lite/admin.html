@@ -25,6 +25,7 @@
         <button class="button secondary" type="button" data-new-post>新建文章</button>
         <button class="button secondary" type="button" data-save-draft>保存草稿</button>
         <button class="button" type="button" data-publish-post>发布文章</button>
+        <button class="button secondary" type="button" data-logout>退出</button>
       </div>
     </div>
   </header>
@@ -167,6 +168,32 @@
   </main>
 
   <input type="file" accept="image/*" hidden data-image-input>
+
+  <div class="modal open" id="admin-auth" role="dialog" aria-modal="true" aria-labelledby="admin-auth-title">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 class="modal-title" id="admin-auth-title" data-auth-title>管理员登录</h2>
+      </div>
+      <p class="modal-copy" data-auth-copy>使用站点管理员账号登录。</p>
+      <form class="modal-form admin-auth-form" data-auth-form>
+        <label class="form-field full">
+          <span>用户名</span>
+          <input type="text" name="username" autocomplete="username" required>
+        </label>
+        <label class="form-field full">
+          <span>密码</span>
+          <input type="password" name="password" autocomplete="current-password" minlength="8" required>
+        </label>
+        <label class="form-field full" data-setup-token-field hidden>
+          <span>初始化密钥</span>
+          <input type="password" name="setupToken" autocomplete="off">
+        </label>
+        <button class="button" type="submit" data-auth-submit>登录</button>
+      </form>
+      <p class="modal-copy" data-auth-error></p>
+    </div>
+  </div>
+
   <div class="toast" data-admin-toast></div>
 </body>
 </html>

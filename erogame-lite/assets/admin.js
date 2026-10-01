@@ -323,9 +323,30 @@
     });
   }
 
+  async function compressImage(file) {
+    if (file.type === "image/gif" || file.size < 500 * 1024) return file;
+    const bitmap = await createImageBitmap(file);
+    const maxSide = 1800;
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    context.drawImage(bitmap, 0, 0, width, height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
+    bitmap.close();
+    if (!blob) return file;
+    const name = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+    return new File([blob], name, { type: "image/jpeg" });
+  }
+
   async function uploadImage(file) {
+    cloudStatus.textContent = "正在压缩图片…";
+    const prepared = await compressImage(file);
     const form = new FormData();
-    form.append("file", file);
+    form.append("file", prepared);
     cloudStatus.textContent = "正在上传图片…";
     const result = await api("/api/admin/media", { method: "POST", body: form });
     cloudStatus.textContent = "图片上传完成";

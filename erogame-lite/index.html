@@ -70,31 +70,56 @@
     </div>
   </header>
 
-  <main class="page">
-    <section class="hero">
-      <p class="eyebrow">Game notes & tutorials</p>
-      <h1 class="page-title center">记录游戏，<br>也整理<span class="title-accent">教程</span>。</h1>
-      <p class="page-description center">一个安静的个人博客。写玩过之后的真实感受，也把实践里真正有用的步骤留下来。</p>
-      <div class="hero-actions">
-        <a class="button" href="archive.html">浏览全部文章</a>
-        <a class="button secondary" href="about.html">了解这个博客</a>
+  <main class="page wide-page home-page">
+    <section class="hero hero-editorial" data-home-hero>
+      <div class="hero-copy">
+        <p class="hero-kicker" data-copy-key="hero_kicker">个人游戏档案</p>
+        <h1 class="page-title" data-copy-key="hero_title">玩游戏，也把过程<br>认真留下来。</h1>
+        <p class="page-description" data-copy-key="hero_description">这里记录玩过之后的真实感受、攻略和长期会反复使用的教程。不追热点，只整理自己愿意保存的内容。</p>
+        <div class="hero-actions">
+          <a class="button" href="archive.html">浏览文章</a>
+          <a class="button secondary" href="about.html">关于这里</a>
+        </div>
       </div>
+      <a class="hero-visual" href="archive.html" data-hero-link>
+        <img data-hero-cover src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1600&q=84" alt="">
+        <span class="hero-visual-caption">
+          <span data-hero-category>游戏感想</span>
+          <strong data-hero-title>最近记录</strong>
+        </span>
+      </a>
     </section>
 
-    <section aria-labelledby="featured-title">
+    <section class="playing-section" aria-labelledby="playing-title">
       <div class="section-head">
-        <h2 id="featured-title">本期推荐</h2>
-        <a href="archive.html">查看归档</a>
+        <h2 id="playing-title" data-copy-key="playing_title">最近游玩</h2>
+        <a href="archive.html?type=game" data-copy-key="playing_link_label">全部游戏感想</a>
       </div>
-      <div class="post-grid" data-home-featured></div>
+      <div class="playing-list" data-home-playing></div>
     </section>
 
-    <section aria-labelledby="latest-title">
+    <section aria-labelledby="recent-title">
       <div class="section-head">
-        <h2 id="latest-title">最新文章</h2>
-        <a href="archive.html">全部文章</a>
+        <h2 id="recent-title" data-copy-key="recent_title">最近记录</h2>
+        <a href="archive.html" data-copy-key="recent_link_label">查看归档</a>
       </div>
-      <div class="post-grid" data-home-latest></div>
+      <div class="post-grid post-grid-editorial" data-home-featured></div>
+    </section>
+
+    <section aria-labelledby="guides-title">
+      <div class="section-head">
+        <h2 id="guides-title" data-copy-key="guides_title">攻略与教程</h2>
+        <a href="archive.html?type=tutorial" data-copy-key="guides_link_label">全部教程</a>
+      </div>
+      <div class="post-grid post-grid-editorial" data-home-latest></div>
+    </section>
+
+    <section class="home-about" aria-labelledby="home-about-title">
+      <div>
+        <h2 id="home-about-title" data-copy-key="about_title">关于这个站点</h2>
+        <p data-copy-key="about_text">这里不是游戏资料站，也不是单纯的攻略库。它更像一份长期维护的个人档案，保留当时的判断，也记录后来发生的变化。</p>
+      </div>
+      <a href="about.html"><span data-copy-key="about_link_label">更多关于</span> <i data-lucide="arrow-right"></i></a>
     </section>
   </main>
 

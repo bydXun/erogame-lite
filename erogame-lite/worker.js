@@ -541,19 +541,22 @@ async function handleApi(request, env, url) {
     if (url.pathname === "/api/admin/media" && request.method === "POST") {
       const form = await request.formData();
       const file = form.get("file");
-      if (!(file instanceof File)) return json({ error: "没有收到图片文件" }, 400);
-      if (file.size > 2 * 1024 * 1024) {
-        return json({ error: "图片压缩后仍超过 2MB，请换一张图片" }, 413);
+      if (!file || typeof file.arrayBuffer !== "function") {
+        return json({ error: "没有收到图片文件" }, 400);
+      }
+      if (file.size > 1.8 * 1024 * 1024) {
+        return json({ error: "图片压缩后仍超过 1.8MB，请换一张图片或先裁剪" }, 413);
       }
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
       const key = `uploads/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
+      const data = await file.arrayBuffer();
       await ensureDatabase(env);
       await env.DB.prepare(
         "INSERT INTO media (key, mime_type, data, created_at) VALUES (?, ?, ?, ?)"
       ).bind(
         key,
         file.type || "application/octet-stream",
-        await file.arrayBuffer(),
+        data,
         new Date().toISOString()
       ).run();
       return json({ url: `/media/${key}`, key }, 201);

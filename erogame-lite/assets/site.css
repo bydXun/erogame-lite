@@ -16,15 +16,29 @@
   --wide: min(1180px, calc(100% - 48px));
   --radius: 8px;
   --shadow: 0 16px 40px rgba(20, 20, 20, 0.07);
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+  --dur-slow: 350ms;
+  --dur-exit: 180ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0, 0, 0, 1);
+  --ease-in: cubic-bezier(0.3, 0, 1, 1);
+  --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 * {
   box-sizing: border-box;
 }
 
+::selection {
+  color: #fff;
+  background: var(--blue);
+}
+
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 132px;
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -57,6 +71,16 @@ button {
   cursor: pointer;
 }
 
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[contenteditable="true"]:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
 img {
   max-width: 100%;
 }
@@ -82,7 +106,9 @@ svg {
   top: 0;
   z-index: 40;
   background: var(--paper-deep);
-  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 320ms ease;
+  transition:
+    transform var(--dur-base) var(--ease-standard),
+    box-shadow var(--dur-base) var(--ease-standard);
   will-change: transform;
 }
 
@@ -193,7 +219,7 @@ svg {
 .nav-menu-button svg {
   width: 14px;
   height: 14px;
-  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform var(--dur-base) var(--ease-out);
 }
 
 .nav-item.open .nav-menu-button svg {
@@ -212,12 +238,12 @@ svg {
   box-shadow: var(--shadow);
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-10px) scale(0.98);
+  transform: translateY(-8px) scale(0.96);
   transform-origin: top left;
   transition:
-    opacity 240ms ease,
-    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    visibility 240ms ease;
+    opacity var(--dur-exit) var(--ease-in),
+    transform var(--dur-exit) var(--ease-in),
+    visibility var(--dur-exit) var(--ease-standard);
   visibility: hidden;
 }
 
@@ -227,6 +253,10 @@ svg {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0) scale(1);
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-emphasized),
+    visibility var(--dur-base) var(--ease-standard);
   visibility: visible;
 }
 
@@ -294,7 +324,10 @@ svg {
   background: var(--ink);
   font-size: 14px;
   font-weight: 700;
-  transition: color 180ms ease, background 180ms ease, border-color 180ms ease;
+  transition:
+    color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard);
 }
 
 .button:hover {
@@ -415,7 +448,7 @@ svg {
   inset: 0;
   background: rgba(17, 17, 17, 0.32);
   opacity: 0;
-  transition: opacity 280ms ease;
+  transition: opacity var(--dur-exit) var(--ease-in);
 }
 
 .drawer-panel {
@@ -429,7 +462,7 @@ svg {
   background: var(--paper);
   box-shadow: -16px 0 40px rgba(17, 17, 17, 0.12);
   transform: translateX(100%);
-  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform var(--dur-exit) var(--ease-in);
 }
 
 .mobile-drawer.open {
@@ -438,10 +471,14 @@ svg {
 
 .mobile-drawer.open .drawer-backdrop {
   opacity: 1;
+  transition-duration: var(--dur-base);
+  transition-timing-function: var(--ease-out);
 }
 
 .mobile-drawer.open .drawer-panel {
   transform: translateX(0);
+  transition-duration: var(--dur-base);
+  transition-timing-function: var(--ease-emphasized);
 }
 
 .drawer-head {
@@ -474,7 +511,7 @@ svg {
 .drawer-group-button svg {
   width: 17px;
   height: 17px;
-  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform var(--dur-base) var(--ease-out);
 }
 
 .drawer-group.open .drawer-group-button svg {
@@ -484,11 +521,13 @@ svg {
 .drawer-submenu {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 360ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: grid-template-rows var(--dur-exit) var(--ease-in);
 }
 
 .drawer-group.open .drawer-submenu {
   grid-template-rows: 1fr;
+  transition-duration: var(--dur-base);
+  transition-timing-function: var(--ease-emphasized);
 }
 
 .drawer-submenu > div {
@@ -510,6 +549,21 @@ svg {
   width: var(--reading);
   margin: 0 auto;
   padding: 64px 0 96px;
+}
+
+@keyframes page-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page > * {
+  animation: page-reveal var(--dur-base) var(--ease-out) both;
 }
 
 .page.wide-page {
@@ -537,6 +591,7 @@ svg {
   font-weight: 700;
   line-height: 1.08;
   letter-spacing: 0;
+  text-wrap: balance;
 }
 
 .page-title.center {
@@ -606,22 +661,24 @@ svg {
 
 .post-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 22px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
 }
 
 .post-card {
+  display: grid;
+  grid-template-columns: minmax(230px, 40%) minmax(0, 1fr);
+  align-items: start;
+  gap: 28px;
   min-width: 0;
-  padding-bottom: 20px;
+  padding: 32px 0;
   border-bottom: 1px solid var(--line);
+  transition: border-color var(--dur-fast) var(--ease-standard);
 }
 
 .post-card.featured {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
-  gap: 28px;
-  align-items: center;
+  grid-column: auto;
+  grid-template-columns: minmax(250px, 43%) minmax(0, 1fr);
 }
 
 .post-cover {
@@ -634,17 +691,27 @@ svg {
 .post-cover img {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
-  transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform var(--dur-base) var(--ease-out);
+  animation: image-fade-in var(--dur-slow) var(--ease-out) both;
 }
 
 .post-cover:hover img {
-  transform: scale(1.025);
+  transform: scale(1.02);
+}
+
+@keyframes image-fade-in {
+  from {
+    opacity: 0.68;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .post-card:not(.featured) .post-cover {
-  margin-bottom: 18px;
+  margin-bottom: 0;
 }
 
 .post-meta,
@@ -679,18 +746,21 @@ svg {
 .post-title {
   margin: 10px 0 0;
   font-family: var(--font-sans);
-  font-size: 29px;
+  font-size: clamp(32px, 3.1vw, 40px);
   font-weight: 700;
-  line-height: 1.28;
+  line-height: 1.24;
   letter-spacing: 0;
 }
 
 .post-card.featured .post-title {
-  font-size: clamp(34px, 4vw, 52px);
+  font-size: clamp(36px, 4vw, 52px);
 }
 
 .post-title a:hover {
   color: var(--blue);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
 }
 
 .post-summary {
@@ -714,6 +784,9 @@ svg {
   color: #625e59;
   font-size: 12px;
   background: transparent;
+  transition:
+    color var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard);
 }
 
 .tag-list a:hover,
@@ -977,9 +1050,22 @@ svg {
 }
 
 .article-body h2 {
+  position: relative;
   margin: 52px 0 20px;
+  padding-left: 15px;
   font-size: 32px;
   line-height: 1.25;
+}
+
+.article-body h2::before {
+  position: absolute;
+  top: 0.2em;
+  bottom: 0.2em;
+  left: 0;
+  width: 3px;
+  border-radius: 99px;
+  background: var(--ink);
+  content: "";
 }
 
 .article-body h3 {
@@ -996,6 +1082,7 @@ svg {
   font-family: var(--font-sans);
   font-size: 20px;
   line-height: 1.75;
+  transition: border-color var(--dur-exit) var(--ease-standard);
 }
 
 .article-body ul,
@@ -1036,6 +1123,7 @@ svg {
   background: var(--blue-soft);
   font-size: 14px;
   line-height: 1.75;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.38);
 }
 
 .callout.warning {
@@ -1050,6 +1138,7 @@ svg {
   border: 1px solid var(--line-soft);
   border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42);
 }
 
 .key-points h3 {
@@ -1079,6 +1168,10 @@ svg {
   color: #55514c;
   background: transparent;
   font-size: 13px;
+  transition:
+    color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard);
 }
 
 .article-action:hover,
@@ -1149,7 +1242,23 @@ svg {
   opacity: 0;
   pointer-events: none;
   transform: translate(22px, -50%);
-  transition: opacity 380ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    opacity var(--dur-slow) var(--ease-standard),
+    transform var(--dur-slow) var(--ease-emphasized);
+}
+
+@media (hover: hover) {
+  .post-card:hover {
+    border-color: #b9b3aa;
+  }
+
+  .article-pagination a,
+  .load-more {
+    transition:
+      color var(--dur-fast) var(--ease-standard),
+      background var(--dur-fast) var(--ease-standard),
+      border-color var(--dur-fast) var(--ease-standard);
+  }
 }
 
 .floating-guide.visible {
@@ -1175,7 +1284,9 @@ svg {
   background: transparent;
   content: "";
   transform: translateY(-50%);
-  transition: width 280ms ease, background 280ms ease;
+  transition:
+    width var(--dur-base) var(--ease-out),
+    background var(--dur-base) var(--ease-out);
 }
 
 .floating-guide a:hover,
@@ -1327,12 +1438,14 @@ svg {
   background: rgba(17, 17, 17, 0.35);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 260ms ease;
+  transition: opacity var(--dur-exit) var(--ease-in);
 }
 
 .modal.open {
   opacity: 1;
   pointer-events: auto;
+  transition-duration: var(--dur-base);
+  transition-timing-function: var(--ease-out);
 }
 
 .modal-card {
@@ -1343,11 +1456,13 @@ svg {
   background: var(--paper);
   box-shadow: 0 26px 80px rgba(17, 17, 17, 0.18);
   transform: translateY(16px) scale(0.98);
-  transition: transform 340ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform var(--dur-exit) var(--ease-in);
 }
 
 .modal.open .modal-card {
   transform: translateY(0) scale(1);
+  transition-duration: var(--dur-base);
+  transition-timing-function: var(--ease-emphasized);
 }
 
 .modal-head {
@@ -1405,12 +1520,16 @@ svg {
   opacity: 0;
   pointer-events: none;
   transform: translateY(12px);
-  transition: opacity 240ms ease, transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    opacity var(--dur-base) var(--ease-in),
+    transform var(--dur-base) var(--ease-in);
 }
 
 .toast.show {
   opacity: 1;
   transform: translateY(0);
+  transition-duration: var(--dur-slow);
+  transition-timing-function: var(--ease-out);
 }
 
 @media (max-width: 1060px) {
@@ -1463,6 +1582,16 @@ svg {
   .post-card.featured {
     grid-template-columns: 1fr;
   }
+
+  .post-card {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 27px 0;
+  }
+
+  .post-card:not(.featured) .post-cover {
+    margin-bottom: 0;
+  }
 }
 
 @media (max-width: 760px) {
@@ -1508,6 +1637,10 @@ svg {
 
   .post-card.featured .post-title {
     font-size: 31px;
+  }
+
+  .post-title {
+    font-size: 29px;
   }
 
   .article-row {

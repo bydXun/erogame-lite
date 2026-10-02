@@ -95,6 +95,10 @@
   color: inherit;
   background: transparent;
   text-align: left;
+  transition:
+    color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard);
 }
 
 .post-list-item:hover {
@@ -131,6 +135,18 @@
 .editor-panel,
 .preview-panel {
   padding: 22px;
+  animation: panel-reveal var(--dur-base) var(--ease-out) both;
+}
+
+@keyframes panel-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .editor-panel-head,
@@ -276,6 +292,10 @@
   color: #494641;
   background: transparent;
   font-size: 12px;
+  transition:
+    color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard);
 }
 
 .toolbar-button:hover {

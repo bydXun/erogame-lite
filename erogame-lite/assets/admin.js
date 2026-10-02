@@ -5,7 +5,6 @@
   let posts = [];
   let activeIndex = -1;
   let dirty = false;
-  let imageTarget = "content";
   let authMode = "login";
 
   const listRoot = $("[data-post-list]");
@@ -15,7 +14,6 @@
   const dirtyStatus = $("[data-dirty-status]");
   const siteCopyStatus = $("[data-site-copy-status]");
   const coverPreview = $("[data-cover-preview]");
-  const imageInput = $("[data-image-input]");
   const authModal = $("#admin-auth");
   const authForm = $("[data-auth-form]");
 
@@ -446,7 +444,7 @@
     return new File([blob], name, { type: "image/jpeg" });
   }
 
-  async function uploadImage(file) {
+  async function uploadImage(file, target) {
     cloudStatus.textContent = "正在压缩图片…";
     const prepared = await compressImage(file);
     const form = new FormData();
@@ -455,7 +453,7 @@
     const result = await api("/api/admin/media", { method: "POST", body: form });
     cloudStatus.textContent = "图片上传完成";
 
-    if (imageTarget === "cover") {
+    if (target === "cover") {
       setField("cover", result.url);
       renderCoverPreview(result.url);
       collectForm();
@@ -495,30 +493,18 @@
       });
     });
 
-    $$("[data-upload-cover]").forEach((button) => {
-      button.addEventListener("click", () => {
-        imageTarget = "cover";
-        imageInput.click();
+    $$("[data-cover-image-input], [data-content-image-input]").forEach((input) => {
+      input.addEventListener("change", async () => {
+        const file = input.files?.[0];
+        input.value = "";
+        if (!file) return;
+        try {
+          await uploadImage(file, input.hasAttribute("data-cover-image-input") ? "cover" : "content");
+        } catch (error) {
+          cloudStatus.textContent = error.message;
+          showToast(error.message);
+        }
       });
-    });
-
-    $$("[data-upload-content-image]").forEach((button) => {
-      button.addEventListener("click", () => {
-        imageTarget = "content";
-        imageInput.click();
-      });
-    });
-
-    imageInput.addEventListener("change", async () => {
-      const file = imageInput.files?.[0];
-      imageInput.value = "";
-      if (!file) return;
-      try {
-        await uploadImage(file);
-      } catch (error) {
-        cloudStatus.textContent = error.message;
-        showToast(error.message);
-      }
     });
 
     window.addEventListener("beforeunload", (event) => {

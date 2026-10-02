@@ -142,6 +142,10 @@
   order: 10;
 }
 
+.file-button {
+  cursor: pointer;
+}
+
 @keyframes panel-reveal {
   from {
     opacity: 0;

@@ -6,6 +6,7 @@
   let activeIndex = -1;
   let dirty = false;
   let authMode = "login";
+  let savedRange = null;
   const SITE_COPY_CACHE_KEY = "erogame-site-content";
 
   const listRoot = $("[data-post-list]");
@@ -33,6 +34,30 @@
     toast.classList.add("show");
     clearTimeout(showToast.timer);
     showToast.timer = setTimeout(() => toast.classList.remove("show"), 2400);
+  }
+
+  function saveEditorSelection() {
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount) return;
+    const range = selection.getRangeAt(0);
+    if (richContent.contains(range.commonAncestorContainer)) {
+      savedRange = range.cloneRange();
+    }
+  }
+
+  function restoreEditorSelection() {
+    richContent.focus();
+    const selection = window.getSelection();
+    if (!selection) return;
+    selection.removeAllRanges();
+    if (savedRange) {
+      selection.addRange(savedRange);
+      return;
+    }
+    const range = document.createRange();
+    range.selectNodeContents(richContent);
+    range.collapse(false);
+    selection.addRange(range);
   }
 
   function setDirty(value) {
@@ -347,24 +372,55 @@
   }
 
   function insertHtml(html) {
-    richContent.focus();
+    restoreEditorSelection();
     document.execCommand("insertHTML", false, html);
+    saveEditorSelection();
     collectForm();
     renderPreview();
     setDirty(true);
   }
 
   function runCommand(command, value) {
-    richContent.focus();
+    restoreEditorSelection();
     document.execCommand(command, false, value || null);
+    saveEditorSelection();
+    collectForm();
+    renderPreview();
+    setDirty(true);
+  }
+
+  function applyFontSize(size) {
+    if (!size) return;
+    restoreEditorSelection();
+    document.execCommand("fontSize", false, "7");
+    $$('font[size="7"]', richContent).forEach((font) => {
+      const span = document.createElement("span");
+      span.style.fontSize = `${size}px`;
+      span.innerHTML = font.innerHTML;
+      font.replaceWith(span);
+    });
+    saveEditorSelection();
     collectForm();
     renderPreview();
     setDirty(true);
   }
 
   function bindEditor() {
+    richContent.addEventListener("keyup", saveEditorSelection);
+    richContent.addEventListener("mouseup", saveEditorSelection);
+    richContent.addEventListener("blur", saveEditorSelection);
+
     $$("[data-command]").forEach((button) => {
+      button.addEventListener("mousedown", (event) => {
+        event.preventDefault();
+        saveEditorSelection();
+      });
       button.addEventListener("click", () => runCommand(button.dataset.command, button.dataset.value));
+    });
+
+    $("[data-font-size-select]")?.addEventListener("change", (event) => {
+      applyFontSize(event.target.value);
+      event.target.value = "";
     });
 
     $("[data-insert-link]")?.addEventListener("click", () => {
@@ -497,6 +553,8 @@
     });
 
     $$("[data-cover-image-input], [data-content-image-input]").forEach((input) => {
+      input.closest("label")?.addEventListener("mousedown", saveEditorSelection);
+      input.addEventListener("mousedown", saveEditorSelection);
       input.addEventListener("change", async () => {
         const file = input.files?.[0];
         input.value = "";

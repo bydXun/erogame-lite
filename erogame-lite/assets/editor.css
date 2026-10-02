@@ -312,6 +312,17 @@
     border-color var(--dur-fast) var(--ease-standard);
 }
 
+.toolbar-select {
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  outline: 0;
+  color: #494641;
+  background: #fff;
+  font-size: 12px;
+}
+
 .toolbar-button:hover {
   border-color: #c9c3ba;
   background: #fff;

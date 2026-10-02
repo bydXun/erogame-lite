@@ -187,6 +187,37 @@
     });
   }
 
+  function renderSiteGuide() {
+    const activeByPage = {
+      home: "home",
+      archive: "archive",
+      tags: "tags",
+      about: "about"
+    };
+    const items = [
+      { key: "home", label: "首页", href: `${basePath}/index.html` },
+      { key: "game", label: "游戏感想", href: `${basePath}/archive.html?type=game` },
+      { key: "tutorial", label: "教程", href: `${basePath}/archive.html?type=tutorial` },
+      { key: "archive", label: "归档", href: `${basePath}/archive.html` },
+      { key: "tags", label: "标签", href: `${basePath}/tags.html` },
+      { key: "about", label: "关于", href: `${basePath}/about.html` }
+    ];
+    const active = activeByPage[page] || "";
+
+    let guide = $(".floating-guide");
+    if (!guide) {
+      guide = document.createElement("nav");
+      guide.className = "floating-guide";
+      guide.dataset.siteGuide = "";
+      document.body.appendChild(guide);
+    }
+
+    guide.setAttribute("aria-label", "站点导览");
+    guide.innerHTML = items.map((item) => `
+      <a class="${item.key === active ? "active" : ""}" href="${item.href}"${item.key === active ? ' aria-current="page"' : ""}>${item.label}</a>
+    `).join("");
+  }
+
   function openMobileDrawer() {
     renderMobileDrawer();
     const drawer = $("#mobile-drawer");
@@ -568,28 +599,6 @@
       if (!heading.id) heading.id = `section-${index + 1}`;
     });
 
-    const tocRoot = $("[data-article-toc]");
-    const guideRoot = $("[data-article-guide]");
-    const tocItems = headings.map((heading, index) => ({
-      id: heading.id,
-      text: heading.textContent.trim(),
-      level: heading.tagName === "H3" ? 3 : 2,
-      active: index === 0
-    }));
-
-    if (tocRoot) {
-      tocRoot.innerHTML = tocItems.map((item) => `
-        <a class="${item.active ? "active" : ""}" href="#${item.id}" data-section-link="${item.id}">${escapeHtml(item.text)}</a>
-      `).join("");
-    }
-
-    if (guideRoot) {
-      guideRoot.innerHTML = tocItems.map((item) => `
-        <a class="${item.active ? "active" : ""}" href="#${item.id}" data-guide-link="${item.id}">${escapeHtml(item.text)}</a>
-      `).join("");
-    }
-
-    initSectionObserver("h2[id], h3[id]", "[data-section-link], [data-guide-link]");
     initArticleActions(post);
     window.lucide?.createIcons();
   }
@@ -699,6 +708,7 @@
     await loadPostsFromApi();
     await initAdminEntry();
     initNavigation();
+    renderSiteGuide();
     initScrollBehavior();
     renderHome();
     renderArchive();

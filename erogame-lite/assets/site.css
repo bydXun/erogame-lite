@@ -2283,7 +2283,7 @@ body {
 }
 
 .floating-guide {
-  right: 12px;
+  right: 24px;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--paper-deep);

@@ -16,7 +16,17 @@
   }
 
   function formatDate(dateString) {
-    const date = new Date(`${dateString}T00:00:00`);
+    const raw = String(dateString || "").trim();
+    const normalized = raw.includes("T") ? raw : raw ? `${raw}T00:00:00` : "";
+    const date = new Date(normalized);
+    if (!normalized || Number.isNaN(date.getTime())) {
+      return {
+        full: "日期未记录",
+        short: "未记录",
+        year: "未归档",
+        weekday: ""
+      };
+    }
     return {
       full: date.toLocaleDateString("zh-CN", {
         year: "numeric",
@@ -335,6 +345,47 @@
     `;
   }
 
+  function renderHero(sortedPosts) {
+    const root = $("[data-home-hero]");
+    if (!root) return;
+
+    const post = sortedPosts.find((item) => item.featured) || sortedPosts[0];
+    if (!post) return;
+
+    const link = $("[data-hero-link]", root);
+    const cover = $("[data-hero-cover]", root);
+    const category = $("[data-hero-category]", root);
+    const title = $("[data-hero-title]", root);
+
+    if (link) link.href = postUrl(post.slug);
+    if (cover) {
+      cover.src = post.cover;
+      cover.alt = post.title;
+    }
+    if (category) category.textContent = post.category;
+    if (title) title.textContent = post.title;
+  }
+
+  function renderPlaying(sortedPosts) {
+    const root = $("[data-home-playing]");
+    if (!root) return;
+
+    const games = sortedPosts.filter((post) => post.type === "game").slice(0, 4);
+    root.innerHTML = games.map((post, index) => {
+      const date = formatDate(post.date);
+      return `
+        <a class="playing-item" href="${postUrl(post.slug)}">
+          <span class="playing-cover">
+            <img src="${escapeHtml(post.cover)}" alt="${escapeHtml(post.title)}" loading="lazy">
+          </span>
+          <span class="playing-index">${String(index + 1).padStart(2, "0")}</span>
+          <strong>${escapeHtml(post.title)}</strong>
+          <small>${escapeHtml(post.category)} · ${escapeHtml(date.full)}</small>
+        </a>
+      `;
+    }).join("");
+  }
+
   function renderHome() {
     const featuredRoot = $("[data-home-featured]");
     const latestRoot = $("[data-home-latest]");
@@ -342,10 +393,14 @@
 
     const sorted = [...posts].sort((a, b) => new Date(b.date) - new Date(a.date));
     const featured = sorted.find((post) => post.featured) || sorted[0];
-    const latest = sorted.filter((post) => post.slug !== featured.slug).slice(0, 4);
+    const guides = sorted
+      .filter((post) => post.type === "tutorial" && post.slug !== featured?.slug)
+      .slice(0, 3);
 
-    featuredRoot.innerHTML = renderPostCard(featured, true);
-    latestRoot.innerHTML = latest.map((post) => renderPostCard(post)).join("");
+    renderHero(sorted);
+    renderPlaying(sorted);
+    featuredRoot.innerHTML = featured ? renderPostCard(featured, true) : "";
+    latestRoot.innerHTML = guides.map((post) => renderPostCard(post)).join("");
   }
 
   function renderArchive() {
@@ -682,6 +737,30 @@
     } catch {}
   }
 
+  function applySiteCopy(content) {
+    $$("[data-copy-key]").forEach((element) => {
+      const key = element.dataset.copyKey;
+      const value = content?.[key];
+      if (typeof value !== "string" || !value.trim()) return;
+      if (key === "hero_title") {
+        element.innerHTML = escapeHtml(value).replace(/\n/g, "<br>");
+      } else {
+        element.textContent = value;
+      }
+    });
+  }
+
+  async function loadSiteCopy() {
+    try {
+      const response = await fetch("/api/site-content", {
+        headers: { "Accept": "application/json" }
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      applySiteCopy(data.content);
+    } catch {}
+  }
+
   async function initAdminEntry() {
     const actions = $(".header-actions");
     if (!actions || $(".admin-entry", actions)) return;
@@ -708,6 +787,7 @@
 
   async function init() {
     await loadPostsFromApi();
+    await loadSiteCopy();
     await initAdminEntry();
     initNavigation();
     renderSiteGuide();

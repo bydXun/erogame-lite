@@ -13,6 +13,7 @@
   const previewBody = $("[data-preview-body]");
   const cloudStatus = $("[data-cloud-status]");
   const dirtyStatus = $("[data-dirty-status]");
+  const siteCopyStatus = $("[data-site-copy-status]");
   const coverPreview = $("[data-cover-preview]");
   const imageInput = $("[data-image-input]");
   const authModal = $("#admin-auth");
@@ -140,6 +141,49 @@
     renderList();
     syncForm();
     cloudStatus.textContent = `已连接云端 · ${posts.length} 篇文章`;
+  }
+
+  function collectSiteCopy() {
+    return Object.fromEntries(
+      $$("[data-site-copy-field]").map((field) => [
+        field.dataset.siteCopyField,
+        field.value
+      ])
+    );
+  }
+
+  function applySiteCopy(content) {
+    $$("[data-site-copy-field]").forEach((field) => {
+      const key = field.dataset.siteCopyField;
+      field.value = content?.[key] ?? "";
+    });
+  }
+
+  async function loadSiteCopy() {
+    siteCopyStatus.textContent = "正在读取首页文案…";
+    try {
+      const result = await api("/api/admin/site-content");
+      applySiteCopy(result.content || {});
+      siteCopyStatus.textContent = "首页文案已同步";
+    } catch (error) {
+      siteCopyStatus.textContent = error.message;
+    }
+  }
+
+  async function saveSiteCopy() {
+    siteCopyStatus.textContent = "正在保存首页文案…";
+    try {
+      const result = await api("/api/admin/site-content", {
+        method: "PUT",
+        body: JSON.stringify({ content: collectSiteCopy() })
+      });
+      applySiteCopy(result.content || {});
+      siteCopyStatus.textContent = "首页文案已保存";
+      showToast("首页文案已保存，刷新首页即可看到");
+    } catch (error) {
+      siteCopyStatus.textContent = error.message;
+      showToast(error.message);
+    }
   }
 
   function getFilteredPosts() {
@@ -427,6 +471,13 @@
       window.location.reload();
     });
 
+    $("[data-save-site-copy]")?.addEventListener("click", saveSiteCopy);
+    $$("[data-site-copy-field]").forEach((field) => {
+      field.addEventListener("input", () => {
+        siteCopyStatus.textContent = "有未保存的首页文案";
+      });
+    });
+
     $$("[data-upload-cover]").forEach((button) => {
       button.addEventListener("click", () => {
         imageTarget = "cover";
@@ -499,6 +550,7 @@
         return;
       }
       await loadPosts();
+      await loadSiteCopy();
     } catch (error) {
       cloudStatus.textContent = error.message;
       listRoot.innerHTML = `<div class="state-box"><h2>无法读取文章</h2><p>${escapeHtml(error.message)}</p></div>`;

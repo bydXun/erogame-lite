@@ -683,24 +683,26 @@
   }
 
   async function initAdminEntry() {
+    const actions = $(".header-actions");
+    if (!actions || $(".admin-entry", actions)) return;
+
+    const link = document.createElement("a");
+    link.className = "button secondary admin-entry";
+    link.href = `${basePath}/admin.html`;
+    link.title = "编辑文章";
+    link.innerHTML = '<i data-lucide="square-pen"></i><span>编辑文章</span>';
+
+    const subscribe = $("[data-open-subscribe]", actions);
+    actions.insertBefore(link, subscribe || null);
+    window.lucide?.createIcons();
+
     try {
       const response = await fetch("/api/admin/me", {
         headers: { "Accept": "application/json" }
       });
       if (!response.ok) return;
       const result = await response.json();
-      const actions = $(".header-actions");
-      if (!actions || $(".admin-entry", actions)) return;
-
-      const link = document.createElement("a");
-      link.className = "button secondary admin-entry";
-      link.href = "admin.html";
-      link.title = `管理员：${result.admin?.username || ""}`;
-      link.innerHTML = '<i data-lucide="square-pen"></i>管理文章';
-
-      const subscribe = $("[data-open-subscribe]", actions);
-      actions.insertBefore(link, subscribe || null);
-      window.lucide?.createIcons();
+      link.title = `编辑文章 · ${result.admin?.username || "管理员"}`;
     } catch {}
   }
 

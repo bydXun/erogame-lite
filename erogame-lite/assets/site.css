@@ -182,6 +182,7 @@ svg {
   display: flex;
   flex: 1 1 auto;
   align-items: center;
+  justify-content: center;
   gap: 26px;
   min-width: 0;
 }
@@ -1192,6 +1193,19 @@ svg {
   border-top: 1px solid var(--line);
 }
 
+.article-browse-all {
+  display: flex;
+  justify-content: center;
+  margin-top: 42px;
+  padding: 28px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.article-browse-all .button {
+  min-width: 160px;
+}
+
 .article-pagination {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1618,6 +1632,15 @@ svg {
     font-size: 13px;
   }
 
+  .admin-entry {
+    min-width: 36px;
+    padding: 0 10px;
+  }
+
+  .admin-entry span {
+    display: none;
+  }
+
   .page {
     padding: 44px 0 72px;
   }
@@ -1673,6 +1696,12 @@ svg {
     flex-direction: column;
     gap: 8px;
     padding: 24px 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .header-subscribe {
+    display: none;
   }
 }
 

@@ -1961,6 +1961,12 @@ body {
   display: grid;
   gap: 5px;
   padding-top: 11px;
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.hero-visual.ready .hero-visual-caption {
+  opacity: 1;
 }
 
 .hero-visual-caption span {

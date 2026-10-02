@@ -369,6 +369,7 @@
     }
     if (category) category.textContent = post.category;
     if (title) title.textContent = post.title;
+    link?.classList.add("ready");
   }
 
   function renderPlaying(sortedPosts) {

@@ -7,6 +7,8 @@ const SITE_CONTENT_DEFAULTS = {
   hero_kicker: "个人游戏档案",
   hero_title: "玩游戏，也把过程\n认真留下来。",
   hero_description: "这里记录玩过之后的真实感受、攻略和长期会反复使用的教程。不追热点，只整理自己愿意保存的内容。",
+  hero_primary_label: "浏览文章",
+  hero_secondary_label: "关于这里",
   playing_title: "最近游玩",
   playing_link_label: "全部游戏感想",
   recent_title: "最近记录",
@@ -15,7 +17,27 @@ const SITE_CONTENT_DEFAULTS = {
   guides_link_label: "全部教程",
   about_title: "关于这个站点",
   about_text: "这里不是游戏资料站，也不是单纯的攻略库。它更像一份长期维护的个人档案，保留当时的判断，也记录后来发生的变化。",
-  about_link_label: "更多关于"
+  about_link_label: "更多关于",
+  archive_page_title: "文章归档",
+  archive_page_description: "按时间回看写过的内容。先有体验，再有教程，最后留下自己当时真正相信的判断。",
+  tags_page_title: "按标签阅读",
+  tags_page_description: "从游戏类型、工具、部署或写作方法进入，找到同一主题下的全部内容。",
+  search_page_title: "搜索文章",
+  search_page_description: "搜索标题、摘要、分类和标签。输入后会显示加载状态、结果或空状态。",
+  about_page_title: "关于 bydXun Lite",
+  about_page_description: "这里记录游戏体验和可复用的教程，不追热点，也不把主观感受包装成绝对结论。",
+  about_why_title: "为什么写这个博客",
+  about_why_text: "游戏玩过以后，很多感受很快会模糊；教程做完以后，如果不整理，也会反复踩同样的坑。这个博客用来留下体验、判断和可以重复使用的过程。",
+  about_write_title: "写什么",
+  about_write_text: "主要内容分两类：一是游戏感想，包括探索、战斗、节奏和设计上的观察；二是教程，包括工具链、部署、写作流程和具体问题的解决方法。",
+  about_principles_title: "内容原则",
+  about_principles: "不把评分当作唯一结论。\n游戏文章明确提示剧透程度。\n教程尽量写出失败情况和排查过程。\n保留原始判断，也不回避后来发生的变化。",
+  about_links_title: "站点入口",
+  about_link_archive_label: "文章归档",
+  about_link_tags_label: "全部标签",
+  about_link_search_label: "搜索文章",
+  about_link_subscribe_label: "订阅更新",
+  footer_text: "© 2026 bydXun Lite，记录游戏，也整理教程。"
 };
 
 const SITE_CONTENT_KEYS = Object.keys(SITE_CONTENT_DEFAULTS);
@@ -205,11 +227,11 @@ function normalizePayload(body, current = {}) {
     slug: String(body.slug || current.slug || `post-${Date.now()}`).trim(),
     title: String(body.title || current.title || "未命名文章").trim(),
     summary: String(body.summary ?? current.summary ?? "").trim(),
-    type: body.type === "tutorial" ? "tutorial" : "game",
+    type: ["game", "tutorial", "essay"].includes(body.type) ? body.type : "game",
     category: String(
       body.category ||
       current.category ||
-      (body.type === "tutorial" ? "教程" : "游戏感想")
+      (body.type === "tutorial" ? "教程" : body.type === "essay" ? "杂谈" : "游戏感想")
     ).trim(),
     tags: JSON.stringify(Array.isArray(body.tags) ? body.tags : []),
     cover: String(body.cover ?? current.cover ?? "").trim(),

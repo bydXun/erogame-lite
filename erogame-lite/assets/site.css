@@ -1080,6 +1080,28 @@ svg {
   line-height: 1.35;
 }
 
+.article-body figure {
+  margin: 28px 0;
+}
+
+.article-body figure figure,
+.article-body h2 figure,
+.article-body h3 figure {
+  margin: 0;
+}
+
+.article-body figcaption {
+  margin: 0;
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  text-align: left;
+}
+
+.article-body figcaption + figcaption {
+  margin-top: 14px;
+}
+
 .article-body blockquote {
   margin: 32px 0;
   padding: 2px 0 2px 22px;
@@ -1683,6 +1705,22 @@ svg {
 
   .article-body {
     font-size: 16px;
+  }
+
+  .article-body figure {
+    margin: 24px 0;
+  }
+
+  .article-body figure figure,
+  .article-body h2 figure,
+  .article-body h3 figure {
+    margin: 0;
+  }
+
+  .article-body figcaption {
+    font-size: 16px;
+    line-height: 1.85;
+    text-align: left;
   }
 
   .article-body h2 {
@@ -2339,6 +2377,21 @@ body {
 @media (max-width: 760px) {
   .page {
     padding: 38px 0 64px;
+  }
+
+  .article-body {
+    font-size: 17px;
+    line-height: 1.92;
+  }
+
+  .article-body figure {
+    margin: 24px 0;
+  }
+
+  .article-body figcaption {
+    font-size: 17px;
+    line-height: 1.92;
+    text-align: left;
   }
 
   .page-title,

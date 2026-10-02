@@ -1,5 +1,5 @@
 (function () {
-  const posts = window.EROGAME_POSTS || [];
+  let posts = window.EROGAME_POSTS || [];
   const page = document.body.dataset.page || "";
   const basePath = document.body.dataset.base || ".";
 
@@ -124,7 +124,7 @@
         <div class="drawer-head">
           <a class="brand" href="${basePath}/index.html">
             <span class="brand-mark" aria-hidden="true"></span>
-            <span>EroGame Lite</span>
+            <span>bydXun Lite</span>
           </a>
           <button class="icon-button" type="button" data-close-drawer aria-label="关闭菜单">
             <i data-lucide="x"></i>
@@ -544,14 +544,14 @@
     }
 
     const date = formatDate(post.date);
-    document.title = `${post.title} · EroGame Lite`;
+    document.title = `${post.title} · bydXun Lite`;
     $("[data-page-title]").textContent = post.title;
     $("[data-page-description]").setAttribute("content", post.summary);
     $("[data-article-category]").textContent = post.category;
     $("[data-article-category]").className = `article-category ${typeClass(post.type)}`;
     $("[data-article-title]").textContent = post.title;
     $("[data-article-summary]").textContent = post.summary;
-    $("[data-article-author]").textContent = "EroGame Lite";
+    $("[data-article-author]").textContent = "bydXun Lite";
     $("[data-article-date]").textContent = date.full;
     $("[data-article-cover]").src = post.cover;
     $("[data-article-cover]").alt = post.title;

@@ -266,7 +266,7 @@
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            message: `更新 EroGame Lite 文章 · ${new Date().toLocaleString("zh-CN")}`,
+            message: `更新 bydXun Lite 文章 · ${new Date().toLocaleString("zh-CN")}`,
             content: encodeBase64Utf8(source),
             branch: GITHUB_BRANCH,
             ...(sha ? { sha } : {})

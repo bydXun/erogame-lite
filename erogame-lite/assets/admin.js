@@ -409,6 +409,24 @@
     richContent.addEventListener("keyup", saveEditorSelection);
     richContent.addEventListener("mouseup", saveEditorSelection);
     richContent.addEventListener("blur", saveEditorSelection);
+    richContent.addEventListener("paste", async (event) => {
+      const files = [...(event.clipboardData?.items || [])]
+        .filter((item) => item.type.startsWith("image/"))
+        .map((item) => item.getAsFile())
+        .filter(Boolean);
+      if (!files.length) return;
+
+      event.preventDefault();
+      saveEditorSelection();
+      for (const file of files) {
+        try {
+          await uploadImage(file, "content");
+        } catch (error) {
+          cloudStatus.textContent = error.message;
+          showToast(error.message);
+        }
+      }
+    });
 
     $$("[data-command]").forEach((button) => {
       button.addEventListener("mousedown", (event) => {

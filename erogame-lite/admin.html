@@ -294,7 +294,10 @@
             <label for="admin-cover">封面图片</label>
             <div class="form-row-inline">
               <input id="admin-cover" data-field="cover" placeholder="/media/... 或图片地址">
-              <button class="button secondary" type="button" data-upload-cover>上传封面</button>
+              <label class="button secondary file-button">
+                上传封面
+                <input type="file" accept="image/*" data-cover-image-input hidden>
+              </label>
             </div>
           </div>
 
@@ -314,7 +317,10 @@
       <div class="editor-panel">
         <div class="editor-panel-head">
           <h2 class="editor-panel-title">正文</h2>
-          <button class="button secondary" type="button" data-upload-content-image>插入图片</button>
+          <label class="button secondary file-button">
+            插入图片
+            <input type="file" accept="image/*" data-content-image-input hidden>
+          </label>
         </div>
 
         <div class="rich-editor">
@@ -328,7 +334,10 @@
             <button class="toolbar-button" type="button" data-command="insertOrderedList"><i data-lucide="list-ordered"></i>编号</button>
             <button class="toolbar-button" type="button" data-command="formatBlock" data-value="blockquote"><i data-lucide="quote"></i>引用</button>
             <button class="toolbar-button" type="button" data-insert-link><i data-lucide="link"></i>链接</button>
-            <button class="toolbar-button" type="button" data-upload-content-image><i data-lucide="image"></i>图片</button>
+            <label class="toolbar-button file-button">
+              <i data-lucide="image"></i>图片
+              <input type="file" accept="image/*" data-content-image-input hidden>
+            </label>
             <button class="toolbar-button" type="button" data-insert-code><i data-lucide="code-2"></i>代码</button>
             <button class="toolbar-button" type="button" data-insert-callout><i data-lucide="message-square-warning"></i>提示框</button>
             <button class="toolbar-button" type="button" data-insert-keypoints"><i data-lucide="badge-check"></i>重点框</button>
@@ -353,8 +362,6 @@
       </div>
     </section>
   </main>
-
-  <input type="file" accept="image/*" hidden data-image-input>
 
   <div class="modal open" id="admin-auth" role="dialog" aria-modal="true" aria-labelledby="admin-auth-title">
     <div class="modal-card">

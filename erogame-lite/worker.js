@@ -580,7 +580,16 @@ async function handleApi(request, env, url) {
         `).bind(normalizedKey).first();
       }
       if (!object) return new Response("Not found", { status: 404 });
-      return new Response(object.data, {
+      let body = object.data;
+      if (ArrayBuffer.isView(body)) {
+        body = body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength);
+      } else if (Array.isArray(body)) {
+        body = new Uint8Array(body).buffer;
+      } else if (body && typeof body === "object" && !(body instanceof ArrayBuffer)) {
+        const values = Object.values(body);
+        if (values.length) body = new Uint8Array(values).buffer;
+      }
+      return new Response(body, {
         headers: {
           "Content-Type": object.mime_type,
           "Cache-Control": "public, max-age=31536000, immutable"

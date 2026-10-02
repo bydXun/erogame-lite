@@ -567,9 +567,18 @@ async function handleApi(request, env, url) {
     const key = decodeURIComponent(url.pathname.slice("/media/".length));
     try {
       await ensureDatabase(env);
-      const object = await env.DB.prepare(
+      let object = await env.DB.prepare(
         "SELECT mime_type, data FROM media WHERE key = ? LIMIT 1"
       ).bind(key).first();
+      if (!object) {
+        const normalizedKey = key.replaceAll("-", "");
+        object = await env.DB.prepare(`
+          SELECT mime_type, data
+          FROM media
+          WHERE REPLACE(key, '-', '') = ?
+          LIMIT 1
+        `).bind(normalizedKey).first();
+      }
       if (!object) return new Response("Not found", { status: 404 });
       return new Response(object.data, {
         headers: {

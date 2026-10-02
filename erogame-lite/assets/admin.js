@@ -417,17 +417,29 @@
 
   async function compressImage(file) {
     if (file.type === "image/gif" || file.size < 500 * 1024) return file;
-    const bitmap = await createImageBitmap(file);
-    const maxSide = 1800;
-    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
-    const width = Math.max(1, Math.round(bitmap.width * scale));
-    const height = Math.max(1, Math.round(bitmap.height * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext("2d");
-    context.drawImage(bitmap, 0, 0, width, height);
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
+    let bitmap;
+    try {
+      bitmap = await createImageBitmap(file);
+    } catch {
+      throw new Error("浏览器无法读取这张图片，请换用 JPG、PNG 或 WebP");
+    }
+
+    const render = async (maxSide, quality) => {
+      const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+      const width = Math.max(1, Math.round(bitmap.width * scale));
+      const height = Math.max(1, Math.round(bitmap.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext("2d");
+      context.drawImage(bitmap, 0, 0, width, height);
+      return new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+    };
+
+    let blob = await render(1400, 0.8);
+    if (blob && blob.size > 1.6 * 1024 * 1024) {
+      blob = await render(1100, 0.72);
+    }
     bitmap.close();
     if (!blob) return file;
     const name = file.name.replace(/\.[^.]+$/, "") + ".jpg";

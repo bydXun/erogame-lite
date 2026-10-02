@@ -737,6 +737,11 @@ svg {
   color: var(--red);
 }
 
+.post-meta .type.essay,
+.archive-type.essay {
+  color: var(--green);
+}
+
 .meta-dot {
   width: 3px;
   height: 3px;
@@ -2278,9 +2283,15 @@ body {
 }
 
 .floating-guide {
-  border-radius: 4px;
+  right: 0;
+  border-right: 0;
+  border-radius: 4px 0 0 4px;
   background: var(--paper);
   box-shadow: none;
+}
+
+.floating-guide.visible {
+  transform: translate(0, -50%);
 }
 
 @media (max-width: 960px) {

@@ -160,26 +160,26 @@
   }
 
   async function loadSiteCopy() {
-    siteCopyStatus.textContent = "正在读取首页文案…";
+    siteCopyStatus.textContent = "正在读取网站文案…";
     try {
       const result = await api("/api/admin/site-content");
       applySiteCopy(result.content || {});
-      siteCopyStatus.textContent = "首页文案已同步";
+      siteCopyStatus.textContent = "网站文案已同步";
     } catch (error) {
       siteCopyStatus.textContent = error.message;
     }
   }
 
   async function saveSiteCopy() {
-    siteCopyStatus.textContent = "正在保存首页文案…";
+    siteCopyStatus.textContent = "正在保存网站文案…";
     try {
       const result = await api("/api/admin/site-content", {
         method: "PUT",
         body: JSON.stringify({ content: collectSiteCopy() })
       });
       applySiteCopy(result.content || {});
-      siteCopyStatus.textContent = "首页文案已保存";
-      showToast("首页文案已保存，刷新首页即可看到");
+      siteCopyStatus.textContent = "网站文案已保存";
+      showToast("网站文案已保存，刷新页面即可看到");
     } catch (error) {
       siteCopyStatus.textContent = error.message;
       showToast(error.message);
@@ -397,7 +397,12 @@
     $$("[data-field]").forEach((field) => {
       field.addEventListener("input", () => {
         if (field.dataset.field === "type") {
-          setField("category", field.value === "game" ? "游戏感想" : "教程");
+          const category = field.value === "game"
+            ? "游戏感想"
+            : field.value === "essay"
+              ? "杂谈"
+              : "教程";
+          setField("category", category);
         }
         if (field.dataset.field === "cover") renderCoverPreview(field.value.trim());
         collectForm();
@@ -474,7 +479,7 @@
     $("[data-save-site-copy]")?.addEventListener("click", saveSiteCopy);
     $$("[data-site-copy-field]").forEach((field) => {
       field.addEventListener("input", () => {
-        siteCopyStatus.textContent = "有未保存的首页文案";
+        siteCopyStatus.textContent = "有未保存的网站文案";
       });
     });
 

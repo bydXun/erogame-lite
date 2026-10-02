@@ -138,6 +138,10 @@
   animation: panel-reveal var(--dur-base) var(--ease-out) both;
 }
 
+.site-copy-panel {
+  order: 10;
+}
+
 @keyframes panel-reveal {
   from {
     opacity: 0;

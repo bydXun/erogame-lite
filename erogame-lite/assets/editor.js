@@ -327,8 +327,8 @@
       slug: post.slug || `post-${Date.now()}`,
       title: post.title || "未命名文章",
       summary: post.summary || "",
-      type: post.type === "game" ? "game" : "tutorial",
-      category: post.category || (post.type === "game" ? "游戏感想" : "教程"),
+      type: ["game", "tutorial", "essay"].includes(post.type) ? post.type : "game",
+      category: post.category || (post.type === "game" ? "游戏感想" : post.type === "essay" ? "杂谈" : "教程"),
       tags: Array.isArray(post.tags) ? post.tags : [],
       date: post.date || new Date().toISOString().slice(0, 10),
       cover: post.cover || "",
@@ -634,7 +634,7 @@
       field.addEventListener("input", () => {
         if (field.dataset.field === "type") {
           const type = field.value;
-          setField("category", type === "game" ? "游戏感想" : "教程");
+          setField("category", type === "game" ? "游戏感想" : type === "essay" ? "杂谈" : "教程");
         }
         if (field.dataset.field === "cover") {
           renderCoverPreview(field.value.trim());

@@ -47,7 +47,7 @@
   }
 
   function typeClass(type) {
-    return type === "game" ? "game" : "tutorial";
+    return ["game", "tutorial", "essay"].includes(type) ? type : "tutorial";
   }
 
   function showToast(message) {
@@ -208,11 +208,15 @@
       { key: "home", label: "首页", href: `${basePath}/index.html` },
       { key: "game", label: "游戏感想", href: `${basePath}/archive.html?type=game` },
       { key: "tutorial", label: "教程", href: `${basePath}/archive.html?type=tutorial` },
+      { key: "essay", label: "杂谈", href: `${basePath}/archive.html?type=essay` },
       { key: "archive", label: "归档", href: `${basePath}/archive.html` },
       { key: "tags", label: "标签", href: `${basePath}/tags.html` },
       { key: "about", label: "关于", href: `${basePath}/about.html` }
     ];
-    const active = activeByPage[page] || "";
+    const requestedType = new URLSearchParams(window.location.search).get("type");
+    const active = requestedType === "essay"
+      ? "essay"
+      : activeByPage[page] || "";
 
     let guide = $(".floating-guide");
     if (!guide) {
@@ -471,7 +475,7 @@
       button.addEventListener("click", () => applyFilter(button.dataset.filter));
     });
 
-    applyFilter(initialType === "game" || initialType === "tutorial" ? initialType : "all");
+    applyFilter(["game", "tutorial", "essay"].includes(initialType) ? initialType : "all");
     initSectionObserver("[data-year-group]", "[data-year-link]");
     window.lucide?.createIcons();
   }
@@ -742,7 +746,14 @@
       const key = element.dataset.copyKey;
       const value = content?.[key];
       if (typeof value !== "string" || !value.trim()) return;
-      if (key === "hero_title") {
+      if (element.hasAttribute("data-copy-list")) {
+        element.innerHTML = value
+          .split(/\n+/)
+          .map((item) => item.trim())
+          .filter(Boolean)
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join("");
+      } else if (key === "hero_title") {
         element.innerHTML = escapeHtml(value).replace(/\n/g, "<br>");
       } else {
         element.textContent = value;

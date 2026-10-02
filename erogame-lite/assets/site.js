@@ -2,6 +2,7 @@
   let posts = window.EROGAME_POSTS || [];
   const page = document.body.dataset.page || "";
   const basePath = document.body.dataset.base || ".";
+  const SITE_COPY_CACHE_KEY = "erogame-site-content";
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -762,6 +763,21 @@
   }
 
   async function loadSiteCopy() {
+    let hasCache = false;
+    try {
+      const cached = JSON.parse(localStorage.getItem(SITE_COPY_CACHE_KEY) || "null");
+      if (cached && typeof cached === "object") {
+        applySiteCopy(cached);
+        hasCache = true;
+        document.documentElement.classList.remove("site-copy-pending");
+      }
+    } catch {}
+
+    const unlock = () => {
+      document.documentElement.classList.remove("site-copy-pending");
+    };
+    const fallbackTimer = window.setTimeout(unlock, 1200);
+
     try {
       const response = await fetch("/api/site-content", {
         headers: { "Accept": "application/json" }
@@ -769,7 +785,15 @@
       if (!response.ok) return;
       const data = await response.json();
       applySiteCopy(data.content);
-    } catch {}
+      if (data.content) {
+        localStorage.setItem(SITE_COPY_CACHE_KEY, JSON.stringify(data.content));
+      }
+    } catch {
+      if (!hasCache) unlock();
+    } finally {
+      window.clearTimeout(fallbackTimer);
+      unlock();
+    }
   }
 
   async function initAdminEntry() {
@@ -797,8 +821,9 @@
   }
 
   async function init() {
+    const siteCopyPromise = loadSiteCopy();
     await loadPostsFromApi();
-    await loadSiteCopy();
+    await siteCopyPromise;
     await initAdminEntry();
     initNavigation();
     renderSiteGuide();

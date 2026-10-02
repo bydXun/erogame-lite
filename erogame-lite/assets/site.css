@@ -1735,6 +1735,10 @@ body {
   letter-spacing: 0;
 }
 
+.site-copy-pending [data-copy-key] {
+  visibility: hidden;
+}
+
 .top-shell {
   border-bottom: 1px solid var(--line);
   background: var(--paper);

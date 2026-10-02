@@ -6,6 +6,7 @@
   let activeIndex = -1;
   let dirty = false;
   let authMode = "login";
+  const SITE_COPY_CACHE_KEY = "erogame-site-content";
 
   const listRoot = $("[data-post-list]");
   const richContent = $("[data-rich-content]");
@@ -162,6 +163,7 @@
     try {
       const result = await api("/api/admin/site-content");
       applySiteCopy(result.content || {});
+      localStorage.setItem(SITE_COPY_CACHE_KEY, JSON.stringify(result.content || {}));
       siteCopyStatus.textContent = "网站文案已同步";
     } catch (error) {
       siteCopyStatus.textContent = error.message;
@@ -176,6 +178,7 @@
         body: JSON.stringify({ content: collectSiteCopy() })
       });
       applySiteCopy(result.content || {});
+      localStorage.setItem(SITE_COPY_CACHE_KEY, JSON.stringify(result.content || {}));
       siteCopyStatus.textContent = "网站文案已保存";
       showToast("网站文案已保存，刷新页面即可看到");
     } catch (error) {
